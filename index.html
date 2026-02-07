@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YRS Staking Platform</title>
+    <title>YRS Staking Platform - Secure & Professional</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -62,6 +62,7 @@
             padding: 20px 0;
             position: relative;
             z-index: 10;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .header-content {
@@ -554,6 +555,152 @@
             font-family: monospace;
         }
 
+        /* Security badge */
+        .security-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        /* Transaction status */
+        .transaction-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .transaction-status.pending {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .transaction-status.success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .transaction-status.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        /* Security warning */
+        .security-warning {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .security-warning-title {
+            font-weight: 600;
+            color: var(--danger);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .modal-btn.primary:hover {
+            background: var(--secondary-color);
+        }
+
+        .modal-btn.secondary {
+            background: var(--surface-light);
+            color: var(--text-primary);
+        }
+
+        .modal-btn.secondary:hover {
+            background: var(--surface);
+        }
+
         /* Responsive design */
         @media (max-width: 768px) {
             .dashboard, .trading-section {
@@ -572,6 +719,12 @@
             .config-form {
                 grid-template-columns: 1fr;
             }
+            
+            .toast {
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
         }
     </style>
 </head>
@@ -587,6 +740,10 @@
                 <div class="logo">
                     <i class="fas fa-coins"></i>
                     YRS Staking Platform
+                    <div class="security-badge">
+                        <i class="fas fa-shield-alt"></i>
+                        Secured
+                    </div>
                 </div>
                 <div class="network-badge">
                     <i class="fas fa-circle"></i>
@@ -619,6 +776,14 @@
                     </div>
                     <button id="saveConfig" class="config-btn">Save</button>
                 </div>
+            </div>
+
+            <div class="security-warning">
+                <div class="security-warning-title">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Security Notice
+                </div>
+                <div>This platform interacts with smart contracts on the blockchain. Always verify contract addresses before making transactions. Never share your private keys or seed phrases with anyone.</div>
             </div>
 
             <div class="debug-info" id="debugInfo" style="display: none;">
@@ -697,6 +862,8 @@
                         </div>
                     </div>
                     
+                    <div class="transaction-status" id="buyTransactionStatus"></div>
+                    
                     <button id="buyBtn" class="trade-btn buy-btn" disabled>
                         <i class="fas fa-arrow-down"></i> Buy YRS
                     </button>
@@ -747,6 +914,8 @@
                         </div>
                     </div>
                     
+                    <div class="transaction-status" id="sellTransactionStatus"></div>
+                    
                     <button id="sellBtn" class="trade-btn sell-btn" disabled>
                         <i class="fas fa-arrow-up"></i> Sell YRS
                     </button>
@@ -762,6 +931,39 @@
         <div class="toast-message">
             <div class="toast-title">Notification</div>
             <div class="toast-text">Message</div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Confirm Transaction</div>
+                <button class="modal-close" id="modalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage">Are you sure you want to proceed with this transaction?</p>
+                <div class="transaction-details" id="modalTransactionDetails" style="display: none;">
+                    <div class="detail-row">
+                        <span class="detail-label">Transaction Type:</span>
+                        <span class="detail-value" id="modalTransactionType">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Amount:</span>
+                        <span class="detail-value" id="modalAmount">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Expected Output:</span>
+                        <span class="detail-value" id="modalExpectedOutput">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" id="modalCancel">Cancel</button>
+                <button class="modal-btn primary" id="modalConfirm">Confirm</button>
+            </div>
         </div>
     </div>
 
@@ -831,6 +1033,7 @@
             let isConfigured = false;
             let wZYSDecimals = 12;
             let YRSDecimals = 12;
+            let pendingTransaction = null;
             
             // DOM elements
             const connectWalletBtn = document.getElementById('connectWallet');
@@ -857,6 +1060,21 @@
             const sellYRSWeiElement = document.getElementById('sellYRSWei');
             const sentToContractElement = document.getElementById('sentToContract');
             const sentToContractSellElement = document.getElementById('sentToContractSell');
+            
+            // Transaction status elements
+            const buyTransactionStatus = document.getElementById('buyTransactionStatus');
+            const sellTransactionStatus = document.getElementById('sellTransactionStatus');
+            
+            // Modal elements
+            const confirmModal = document.getElementById('confirmModal');
+            const modalClose = document.getElementById('modalClose');
+            const modalCancel = document.getElementById('modalCancel');
+            const modalConfirm = document.getElementById('modalConfirm');
+            const modalMessage = document.getElementById('modalMessage');
+            const modalTransactionDetails = document.getElementById('modalTransactionDetails');
+            const modalTransactionType = document.getElementById('modalTransactionType');
+            const modalAmount = document.getElementById('modalAmount');
+            const modalExpectedOutput = document.getElementById('modalExpectedOutput');
             
             // Initialize
             await checkConnection();
@@ -959,6 +1177,15 @@
                 // Buy form inputs
                 if (buyWZYSAmountInput) {
                     buyWZYSAmountInput.addEventListener('input', function(e) {
+                        // Validate input
+                        const value = parseFloat(e.target.value);
+                        if (isNaN(value) || value < 0) {
+                            e.target.value = '';
+                            expectedYRSInput.value = '';
+                            buyTransactionDetails.style.display = 'none';
+                            return;
+                        }
+                        
                         calculateExpectedYRS();
                         updateBuyTransactionDetails();
                     }, false);
@@ -967,6 +1194,15 @@
                 // Sell form inputs
                 if (sellYRSAmountInput) {
                     sellYRSAmountInput.addEventListener('input', function(e) {
+                        // Validate input
+                        const value = parseFloat(e.target.value);
+                        if (isNaN(value) || value < 0) {
+                            e.target.value = '';
+                            expectedWZYSInput.value = '';
+                            sellTransactionDetails.style.display = 'none';
+                            return;
+                        }
+                        
                         calculateExpectedWZYS();
                         updateSellTransactionDetails();
                     }, false);
@@ -977,7 +1213,7 @@
                     buyBtn.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleBuy();
+                        showBuyConfirmation();
                     }, false);
                 }
                 
@@ -985,7 +1221,7 @@
                     sellBtn.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleSell();
+                        showSellConfirmation();
                     }, false);
                 }
                 
@@ -1014,6 +1250,23 @@
                     }, false);
                 }
                 
+                // Modal event listeners
+                if (modalClose) {
+                    modalClose.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        hideModal();
+                    }, false);
+                }
+                
+                if (modalCancel) {
+                    modalCancel.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        hideModal();
+                    }, false);
+                }
+                
                 // Handle account changes
                 if (window.ethereum) {
                     window.ethereum.on('accountsChanged', function(accounts) {
@@ -1032,9 +1285,9 @@
             
             // Save contract configuration
             function saveConfiguration() {
-                CONTRACT_ADDRESS = document.getElementById('contractAddress').value;
-                WZYS_ADDRESS = document.getElementById('wZYSAddress').value;
-                YRS_ADDRESS = document.getElementById('YRSAddress').value;
+                CONTRACT_ADDRESS = document.getElementById('contractAddress').value.trim();
+                WZYS_ADDRESS = document.getElementById('wZYSAddress').value.trim();
+                YRS_ADDRESS = document.getElementById('YRSAddress').value.trim();
                 
                 if (!CONTRACT_ADDRESS || !WZYS_ADDRESS || !YRS_ADDRESS) {
                     showToast('error', 'Missing Addresses', 'Please enter all contract addresses');
@@ -1137,6 +1390,10 @@
                 
                 // Hide debug info
                 debugInfo.style.display = 'none';
+                
+                // Reset transaction status
+                buyTransactionStatus.style.display = 'none';
+                sellTransactionStatus.style.display = 'none';
                 
                 showToast('info', 'Wallet Disconnected', 'Your wallet has been disconnected');
             }
@@ -1280,6 +1537,73 @@
                 }
             }
             
+            // Show buy confirmation modal
+            function showBuyConfirmation() {
+                if (!isConnected || !isConfigured) {
+                    showToast('error', 'Not Ready', 'Please connect wallet and configure contracts');
+                    return;
+                }
+                
+                const wZYSAmount = buyWZYSAmountInput.value;
+                
+                if (!wZYSAmount || parseFloat(wZYSAmount) <= 0) {
+                    showToast('error', 'Invalid Amount', 'Please enter a valid wZYS amount');
+                    return;
+                }
+                
+                // Set modal content
+                modalMessage.textContent = 'Are you sure you want to buy YRS tokens?';
+                modalTransactionType.textContent = 'Buy YRS';
+                modalAmount.textContent = `${wZYSAmount} wZYS`;
+                modalExpectedOutput.textContent = `${expectedYRSInput.value} YRS`;
+                modalTransactionDetails.style.display = 'block';
+                
+                // Show modal
+                confirmModal.classList.add('show');
+                
+                // Set modal confirm action
+                modalConfirm.onclick = function() {
+                    hideModal();
+                    handleBuy();
+                };
+            }
+            
+            // Show sell confirmation modal
+            function showSellConfirmation() {
+                if (!isConnected || !isConfigured) {
+                    showToast('error', 'Not Ready', 'Please connect wallet and configure contracts');
+                    return;
+                }
+                
+                const YRSAmount = sellYRSAmountInput.value;
+                
+                if (!YRSAmount || parseFloat(YRSAmount) <= 0) {
+                    showToast('error', 'Invalid Amount', 'Please enter a valid YRS amount');
+                    return;
+                }
+                
+                // Set modal content
+                modalMessage.textContent = 'Are you sure you want to sell YRS tokens?';
+                modalTransactionType.textContent = 'Sell YRS';
+                modalAmount.textContent = `${YRSAmount} YRS`;
+                modalExpectedOutput.textContent = `${expectedWZYSInput.value} wZYS`;
+                modalTransactionDetails.style.display = 'block';
+                
+                // Show modal
+                confirmModal.classList.add('show');
+                
+                // Set modal confirm action
+                modalConfirm.onclick = function() {
+                    hideModal();
+                    handleSell();
+                };
+            }
+            
+            // Hide modal
+            function hideModal() {
+                confirmModal.classList.remove('show');
+            }
+            
             // Handle buy transaction
             async function handleBuy() {
                 if (!isConnected || !isConfigured) {
@@ -1299,34 +1623,71 @@
                     buyBtn.disabled = true;
                     buyBtn.innerHTML = '<span class="spinner"></span> Processing...';
                     
+                    // Show transaction status
+                    buyTransactionStatus.className = 'transaction-status pending';
+                    buyTransactionStatus.innerHTML = '<i class="fas fa-clock"></i> Transaction pending...';
+                    buyTransactionStatus.style.display = 'block';
+                    
                     // Convert to wei with correct decimals
                     const wZYSAmountWei = ethers.utils.parseUnits(wZYSAmount, wZYSDecimals);
                     
                     // Check allowance
                     const allowance = await wZYSContract.allowance(userAddress, CONTRACT_ADDRESS);
                     if (allowance.lt(wZYSAmountWei)) {
+                        // Update transaction status
+                        buyTransactionStatus.innerHTML = '<i class="fas fa-clock"></i> Approving token transfer...';
+                        
                         // Approve first
                         const approveTx = await wZYSContract.approve(CONTRACT_ADDRESS, wZYSAmountWei);
                         await approveTx.wait();
+                        
+                        // Update transaction status
+                        buyTransactionStatus.innerHTML = '<i class="fas fa-clock"></i> Approval confirmed. Proceeding with purchase...';
                         showToast('info', 'Approval Confirmed', 'Transaction approved. Proceeding with purchase...');
                     }
                     
+                    // Update transaction status
+                    buyTransactionStatus.innerHTML = '<i class="fas fa-clock"></i> Executing buy transaction...';
+                    
                     // Execute buy transaction
                     const tx = await contract.buy1(wZYSAmountWei);
-                    await tx.wait();
                     
-                    // Update UI
-                    updateContractData();
-                    updateUserBalances();
+                    // Update transaction status with hash
+                    buyTransactionStatus.innerHTML = `<i class="fas fa-clock"></i> Transaction submitted: <a href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank" style="color: var(--accent-color);">View on Etherscan</a>`;
                     
-                    // Reset form
-                    buyWZYSAmountInput.value = '';
-                    expectedYRSInput.value = '';
-                    buyTransactionDetails.style.display = 'none';
+                    // Wait for transaction to be mined
+                    const receipt = await tx.wait();
                     
-                    showToast('success', 'Purchase Successful', `You bought ${expectedYRSInput.value} YRS tokens`);
+                    // Check if transaction was successful
+                    if (receipt.status === 1) {
+                        // Update transaction status
+                        buyTransactionStatus.className = 'transaction-status success';
+                        buyTransactionStatus.innerHTML = '<i class="fas fa-check-circle"></i> Transaction successful!';
+                        
+                        // Update UI
+                        updateContractData();
+                        updateUserBalances();
+                        
+                        // Reset form
+                        buyWZYSAmountInput.value = '';
+                        expectedYRSInput.value = '';
+                        buyTransactionDetails.style.display = 'none';
+                        
+                        showToast('success', 'Purchase Successful', `You bought ${expectedYRSInput.value} YRS tokens`);
+                    } else {
+                        // Update transaction status
+                        buyTransactionStatus.className = 'transaction-status error';
+                        buyTransactionStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Transaction failed!';
+                        
+                        showToast('error', 'Transaction Failed', 'The transaction was mined but failed');
+                    }
                 } catch (error) {
                     console.error('Error buying tokens:', error);
+                    
+                    // Update transaction status
+                    buyTransactionStatus.className = 'transaction-status error';
+                    buyTransactionStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Transaction failed!';
+                    
                     let errorMessage = 'Failed to buy YRS tokens';
                     
                     // Try to extract a more specific error message
@@ -1350,6 +1711,11 @@
                     // Reset button state
                     buyBtn.disabled = false;
                     buyBtn.innerHTML = '<i class="fas fa-arrow-down"></i> Buy YRS';
+                    
+                    // Hide transaction status after 10 seconds
+                    setTimeout(() => {
+                        buyTransactionStatus.style.display = 'none';
+                    }, 10000);
                 }
             }
             
@@ -1372,34 +1738,71 @@
                     sellBtn.disabled = true;
                     sellBtn.innerHTML = '<span class="spinner"></span> Processing...';
                     
+                    // Show transaction status
+                    sellTransactionStatus.className = 'transaction-status pending';
+                    sellTransactionStatus.innerHTML = '<i class="fas fa-clock"></i> Transaction pending...';
+                    sellTransactionStatus.style.display = 'block';
+                    
                     // Convert to wei with correct decimals
                     const YRSAmountWei = ethers.utils.parseUnits(YRSAmount, YRSDecimals);
                     
                     // Check allowance
                     const allowance = await YRSContract.allowance(userAddress, CONTRACT_ADDRESS);
                     if (allowance.lt(YRSAmountWei)) {
+                        // Update transaction status
+                        sellTransactionStatus.innerHTML = '<i class="fas fa-clock"></i> Approving token transfer...';
+                        
                         // Approve first
                         const approveTx = await YRSContract.approve(CONTRACT_ADDRESS, YRSAmountWei);
                         await approveTx.wait();
+                        
+                        // Update transaction status
+                        sellTransactionStatus.innerHTML = '<i class="fas fa-clock"></i> Approval confirmed. Proceeding with sale...';
                         showToast('info', 'Approval Confirmed', 'Transaction approved. Proceeding with sale...');
                     }
                     
+                    // Update transaction status
+                    sellTransactionStatus.innerHTML = '<i class="fas fa-clock"></i> Executing sell transaction...';
+                    
                     // Execute sell transaction
                     const tx = await contract.sell1(YRSAmountWei);
-                    await tx.wait();
                     
-                    // Update UI
-                    updateContractData();
-                    updateUserBalances();
+                    // Update transaction status with hash
+                    sellTransactionStatus.innerHTML = `<i class="fas fa-clock"></i> Transaction submitted: <a href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank" style="color: var(--accent-color);">View on Etherscan</a>`;
                     
-                    // Reset form
-                    sellYRSAmountInput.value = '';
-                    expectedWZYSInput.value = '';
-                    sellTransactionDetails.style.display = 'none';
+                    // Wait for transaction to be mined
+                    const receipt = await tx.wait();
                     
-                    showToast('success', 'Sale Successful', `You sold ${YRSAmount} YRS tokens`);
+                    // Check if transaction was successful
+                    if (receipt.status === 1) {
+                        // Update transaction status
+                        sellTransactionStatus.className = 'transaction-status success';
+                        sellTransactionStatus.innerHTML = '<i class="fas fa-check-circle"></i> Transaction successful!';
+                        
+                        // Update UI
+                        updateContractData();
+                        updateUserBalances();
+                        
+                        // Reset form
+                        sellYRSAmountInput.value = '';
+                        expectedWZYSInput.value = '';
+                        sellTransactionDetails.style.display = 'none';
+                        
+                        showToast('success', 'Sale Successful', `You sold ${YRSAmount} YRS tokens`);
+                    } else {
+                        // Update transaction status
+                        sellTransactionStatus.className = 'transaction-status error';
+                        sellTransactionStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Transaction failed!';
+                        
+                        showToast('error', 'Transaction Failed', 'The transaction was mined but failed');
+                    }
                 } catch (error) {
                     console.error('Error selling tokens:', error);
+                    
+                    // Update transaction status
+                    sellTransactionStatus.className = 'transaction-status error';
+                    sellTransactionStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Transaction failed!';
+                    
                     let errorMessage = 'Failed to sell YRS tokens';
                     
                     // Try to extract a more specific error message
@@ -1423,6 +1826,11 @@
                     // Reset button state
                     sellBtn.disabled = false;
                     sellBtn.innerHTML = '<i class="fas fa-arrow-up"></i> Sell YRS';
+                    
+                    // Hide transaction status after 10 seconds
+                    setTimeout(() => {
+                        sellTransactionStatus.style.display = 'none';
+                    }, 10000);
                 }
             }
             
