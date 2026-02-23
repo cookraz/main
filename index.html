@@ -3,703 +3,1098 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arbitrage Bot · professional workflow</title>
-    <!-- Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Arbitrage Bot · Professional Workflow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-void: #06080d;
+            --bg-deep: #0b0f18;
+            --bg-surface: #111827;
+            --bg-panel: #1a2234;
+            --bg-card: #1e2738;
+            --border-dim: #2a3444;
+            --border-glow: #3b82f6;
+            --text-bright: #f1f5f9;
+            --text-muted: #7a8ba3;
+            --text-dim: #4a5a70;
+            --cyan: #06b6d4;
+            --cyan-glow: rgba(6, 182, 212, 0.4);
+            --emerald: #10b981;
+            --emerald-glow: rgba(16, 185, 129, 0.4);
+            --amber: #f59e0b;
+            --amber-glow: rgba(245, 158, 11, 0.4);
+            --rose: #f43f5e;
+            --violet: #8b5cf6;
+            --wire-idle: #2a3f5a;
+            --wire-active: #06b6d4;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        :root {
-            --bg-deep: #0a0c12;
-            --bg-surface: #11161f;
-            --bg-panel: #1a212e;
-            --border-light: #2a3442;
-            --border-active: #3b82f6;
-            --text-primary: #f0f4fa;
-            --text-secondary: #9aaec9;
-            --accent-blue: #3b82f6;
-            --accent-green: #22c55e;
-            --accent-orange: #f59e0b;
-            --accent-red: #ef4444;
-            --wire-default: #3a4b62;
-            --wire-active: #22c55e;
-            --node-bg: #1f2a3a;
-            --shadow-heavy: 0 20px 35px -8px rgba(0, 0, 0, 0.8);
-        }
-
         body {
-            background-color: var(--bg-deep);
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            height: 100vh;
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-void);
+            color: var(--text-bright);
+            min-height: 100vh;
             overflow: hidden;
-            display: grid;
-            grid-template-columns: 1.6fr 1fr;
-            grid-template-rows: 70px 1fr 200px;
         }
 
-        /* ----- HEADER ----- */
+        /* ===== AMBIENT BACKGROUND ===== */
+        .ambient-bg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .ambient-bg::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(ellipse 800px 600px at 20% 30%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 600px 500px at 80% 70%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse 400px 400px at 50% 50%, rgba(16, 185, 129, 0.04) 0%, transparent 50%);
+            animation: ambientDrift 30s ease-in-out infinite;
+        }
+
+        @keyframes ambientDrift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(2%, 1%) rotate(1deg); }
+            66% { transform: translate(-1%, 2%) rotate(-1deg); }
+        }
+
+        .grid-overlay {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(6, 182, 212, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6, 182, 212, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 70%);
+        }
+
+        /* ===== MAIN LAYOUT ===== */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            grid-template-rows: 64px 1fr 180px;
+            height: 100vh;
+        }
+
+        /* ===== HEADER ===== */
         header {
             grid-column: 1 / -1;
-            background: var(--bg-surface);
-            border-bottom: 1px solid var(--border-light);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 24px;
+            padding: 0 28px;
+            background: linear-gradient(180deg, var(--bg-deep) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border-dim);
         }
-        .logo {
+
+        .logo-group {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--cyan) 0%, var(--violet) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 24px var(--cyan-glow);
+        }
+
+        .logo-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: white;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
             font-weight: 700;
-            font-size: 1.3rem;
+            letter-spacing: -0.02em;
         }
-        .logo i {
-            color: var(--accent-blue);
-            font-size: 1.8rem;
+
+        .logo-text span {
+            font-weight: 400;
+            color: var(--text-muted);
         }
-        .status-pill {
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid var(--accent-green);
-            color: var(--accent-green);
-            padding: 6px 16px;
-            border-radius: 40px;
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-indicator {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-        .pulse-dot {
-            width: 10px;
-            height: 10px;
-            background: currentColor;
-            border-radius: 50%;
-            animation: pulse 1.8s infinite;
-        }
-        .balance {
-            font-family: 'JetBrains Mono', monospace;
-            background: var(--bg-panel);
-            padding: 8px 20px;
-            border-radius: 40px;
-            border: 1px solid var(--border-light);
+            padding: 8px 18px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            transition: all 0.3s ease;
         }
 
-        /* ----- WORKFLOW (LEFT) ----- */
-        #workflow {
-            grid-column: 1 / 2;
-            grid-row: 2 / 3;
+        .status-indicator.executing {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: var(--amber);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--emerald);
+            border-radius: 50%;
+            animation: statusPulse 2s ease-in-out infinite;
+        }
+
+        .status-indicator.executing .status-dot {
+            background: var(--amber);
+            animation: statusPulseFast 0.6s ease-in-out infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 0.4; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        @keyframes statusPulseFast {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .balance-display {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 10px 20px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-dim);
+            border-radius: 10px;
+        }
+
+        .balance-display span {
+            color: var(--emerald);
+        }
+
+        /* ===== WORKFLOW CANVAS ===== */
+        #workflow-canvas {
             position: relative;
-            background: radial-gradient(circle at 30% 30%, #1f2a3a 0%, var(--bg-deep) 100%);
+            background: transparent;
             overflow: hidden;
         }
-        .wires-svg {
+
+        .wire-svg {
             position: absolute;
-            top: 0;
-            left: 0;
+            inset: 0;
             width: 100%;
             height: 100%;
             pointer-events: none;
             z-index: 1;
         }
-        .wire {
+
+        .wire-path {
             fill: none;
-            stroke: var(--wire-default);
-            stroke-width: 2.5;
+            stroke: var(--wire-idle);
+            stroke-width: 2;
             stroke-linecap: round;
-            transition: stroke 0.2s, filter 0.2s;
+            transition: stroke 0.4s ease, filter 0.4s ease;
         }
-        .wire.active {
+
+        .wire-path.active {
             stroke: var(--wire-active);
-            filter: drop-shadow(0 0 10px #22c55e80);
+            filter: drop-shadow(0 0 8px var(--cyan-glow));
         }
 
-        /* NODES */
-        .node {
+        .wire-packet {
+            fill: var(--cyan);
+            filter: drop-shadow(0 0 12px var(--cyan));
+        }
+
+        /* ===== NODE CARDS ===== */
+        .node-card {
             position: absolute;
-            width: 200px;
-            background: var(--node-bg);
-            border: 1px solid var(--border-light);
-            border-radius: 24px;
-            padding: 18px 16px;
-            box-shadow: var(--shadow-heavy);
-            z-index: 2;
-            backdrop-filter: blur(4px);
-            transition: border-color 0.2s, box-shadow 0.2s, transform 0.1s;
-            cursor: default;
-        }
-        .node h3 {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-        .node .value {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.3rem;
-            font-weight: 600;
-            line-height: 1.3;
-        }
-        .node .sub {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-top: 6px;
+            width: 190px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 16px;
+            padding: 16px;
+            z-index: 10;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(8px);
         }
 
-        /* node states */
-        .node.scanning { border-color: var(--accent-blue); box-shadow: 0 0 25px #3b82f640; }
-        .node.processing { border-color: var(--accent-orange); box-shadow: 0 0 25px #f59e0b40; animation: pulse-orange 1.5s infinite; }
-        .node.success { border-color: var(--accent-green); background: rgba(34, 197, 94, 0.1); }
-
-        /* DATA PACKET */
-        .packet {
+        .node-card::before {
+            content: '';
             position: absolute;
+            inset: -1px;
+            border-radius: 17px;
+            background: linear-gradient(135deg, transparent 40%, var(--cyan-glow) 100%);
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.3s ease;
+        }
+
+        .node-card:hover::before {
+            opacity: 0.3;
+        }
+
+        .node-card.active {
+            border-color: var(--cyan);
+            box-shadow: 0 0 40px -10px var(--cyan-glow);
+        }
+
+        .node-card.processing {
+            border-color: var(--amber);
+            box-shadow: 0 0 40px -10px var(--amber-glow);
+        }
+
+        .node-card.success {
+            border-color: var(--emerald);
+            box-shadow: 0 0 40px -10px var(--emerald-glow);
+        }
+
+        .node-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .node-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--bg-surface);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .node-icon svg {
             width: 16px;
             height: 16px;
-            background: var(--accent-blue);
-            border-radius: 50%;
-            filter: drop-shadow(0 0 20px #3b82f6);
-            z-index: 10;
-            display: none;
-            pointer-events: none;
+            stroke: var(--text-muted);
+            fill: none;
+            stroke-width: 2;
         }
 
-        /* ----- DASHBOARD (RIGHT) ----- */
+        .node-card.active .node-icon svg { stroke: var(--cyan); }
+        .node-card.processing .node-icon svg { stroke: var(--amber); }
+        .node-card.success .node-icon svg { stroke: var(--emerald); }
+
+        .node-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+
+        .node-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            transition: color 0.3s ease;
+        }
+
+        .node-card.success .node-value {
+            color: var(--emerald);
+        }
+
+        .node-sub {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        /* ===== DASHBOARD PANEL ===== */
         #dashboard {
-            grid-column: 2 / 3;
-            grid-row: 2 / 4;
-            background: var(--bg-surface);
-            border-left: 1px solid var(--border-light);
-            padding: 24px;
+            background: var(--bg-deep);
+            border-left: 1px solid var(--border-dim);
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 16px;
             overflow-y: auto;
         }
-        .card {
+
+        .dash-card {
             background: var(--bg-panel);
-            border-radius: 28px;
-            padding: 22px;
-            border: 1px solid var(--border-light);
-            box-shadow: 0 10px 20px -10px black;
+            border: 1px solid var(--border-dim);
+            border-radius: 16px;
+            padding: 18px;
         }
-        .card-title {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 16px;
+
+        .dash-card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 14px;
         }
-        .metric-grid {
+
+        .dash-card-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+
+        .dash-card-badge {
+            font-size: 0.65rem;
+            padding: 4px 10px;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--emerald);
+            border-radius: 100px;
+            font-weight: 600;
+        }
+
+        .price-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
+            gap: 12px;
         }
-        .metric {
+
+        .price-item {
             background: var(--bg-surface);
-            border-radius: 20px;
-            padding: 16px;
+            border-radius: 12px;
+            padding: 14px;
             text-align: center;
         }
-        .metric .label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-        .metric .num {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--accent-blue);
-        }
-        .metric.profit .num { color: var(--accent-green); }
 
-        /* CHART */
-        #chart-container {
-            width: 100%;
-            height: 160px;
-            margin-top: 10px;
+        .price-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-bottom: 6px;
         }
-        #spread-chart {
+
+        .price-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--cyan);
+        }
+
+        /* ===== CHART ===== */
+        .chart-wrapper {
+            height: 140px;
+            position: relative;
+            margin-top: 8px;
+        }
+
+        .chart-svg {
             width: 100%;
             height: 100%;
         }
+
         .chart-line {
             fill: none;
-            stroke: var(--accent-blue);
+            stroke: var(--cyan);
             stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
-        .chart-fill {
-            fill: rgba(59, 130, 246, 0.15);
+
+        .chart-area {
+            fill: url(#chartGradient);
         }
-        .threshold-line {
-            stroke: var(--accent-green);
+
+        .chart-threshold {
+            stroke: var(--emerald);
+            stroke-width: 1;
             stroke-dasharray: 4 4;
-            stroke-width: 1.5;
         }
 
-        /* LOGS */
-        #logs {
-            grid-column: 1 / 2;
-            grid-row: 3 / 4;
-            background: var(--bg-surface);
-            border-top: 1px solid var(--border-light);
-            padding: 16px 24px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column-reverse; /* newest at bottom */
+        .chart-label {
+            font-size: 0.6rem;
+            fill: var(--text-dim);
         }
-        .log-entry {
-            display: flex;
+
+        /* ===== STATS GRID ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 12px;
-            padding: 4px 0;
-            border-bottom: 1px solid #2a3442;
-            color: var(--text-secondary);
         }
-        .log-time { color: #6a7c99; }
-        .log-msg.info { color: var(--text-primary); }
-        .log-msg.success { color: var(--accent-green); }
-        .log-msg.warn { color: var(--accent-orange); }
 
-        /* ANIMATIONS */
-        @keyframes pulse {
-            0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; }
+        .stat-item {
+            background: var(--bg-surface);
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
         }
-        @keyframes pulse-orange {
-            0% { border-color: var(--accent-orange); box-shadow: 0 0 0 #f59e0b00; }
-            50% { border-color: var(--accent-orange); box-shadow: 0 0 25px #f59e0b80; }
-            100% { border-color: var(--accent-orange); box-shadow: 0 0 0 #f59e0b00; }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--emerald);
+        }
+
+        /* ===== LOGS PANEL ===== */
+        #logs-panel {
+            grid-column: 1 / 2;
+            background: var(--bg-deep);
+            border-top: 1px solid var(--border-dim);
+            padding: 14px 24px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            overflow-y: auto;
+        }
+
+        .log-row {
+            display: flex;
+            gap: 14px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(42, 52, 68, 0.5);
+            animation: logFadeIn 0.3s ease;
+        }
+
+        @keyframes logFadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .log-time {
+            color: var(--text-dim);
+            flex-shrink: 0;
+        }
+
+        .log-type {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+
+        .log-type.info { background: var(--cyan); }
+        .log-type.warn { background: var(--amber); }
+        .log-type.success { background: var(--emerald); }
+        .log-type.error { background: var(--rose); }
+
+        .log-msg {
+            color: var(--text-muted);
+        }
+
+        .log-msg.success { color: var(--emerald); }
+        .log-msg.warn { color: var(--amber); }
+
+        /* ===== REDUCED MOTION ===== */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-void);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-dim);
+            border-radius: 3px;
         }
     </style>
 </head>
 <body>
-
-    <!-- HEADER -->
-    <header>
-        <div class="logo">
-            <i class="fas fa-robot"></i>
-            <span>Arbitrage<span style="font-weight:400; color:var(--text-secondary);">· visual workflow</span></span>
-        </div>
-        <div style="display:flex; gap:24px; align-items:center;">
-            <div class="status-pill" id="statusPill">
-                <div class="pulse-dot"></div>
-                <span id="botStatus">SCANNING</span>
-            </div>
-            <div class="balance">$ <span id="balance">10,000.00</span></div>
-        </div>
-    </header>
-
-    <!-- WORKFLOW AREA with nodes -->
-    <div id="workflow">
-        <svg class="wires-svg" id="wiresLayer"></svg>
-        <div class="packet" id="dataPacket"></div>
-
-        <!-- NODES (fixed positions for clean layout) -->
-        <div class="node" id="nodeScan" style="left: 80px; top: 220px;">
-            <h3><i class="fa-regular fa-eye" style="margin-right:6px;"></i> 1. Market Scan</h3>
-            <div class="value" id="spreadValue">0.00%</div>
-            <div class="sub">spread (DAI/USDC)</div>
-        </div>
-        <div class="node" id="nodeBuy" style="left: 340px; top: 120px;">
-            <h3><i class="fa-regular fa-circle-check" style="margin-right:6px;"></i> 2. Buy</h3>
-            <div class="value" id="buyValue">---</div>
-            <div class="sub">Uniswap (cheap)</div>
-        </div>
-        <div class="node" id="nodeBridge" style="left: 600px; top: 220px;">
-            <h3><i class="fa-regular fa-arrow-right-arrow-left"></i> 3. Bridge</h3>
-            <div class="value" id="bridgeValue">---</div>
-            <div class="sub">cross‑chain</div>
-        </div>
-        <div class="node" id="nodeSell" style="left: 860px; top: 320px;">
-            <h3><i class="fa-regular fa-chart-line"></i> 4. Sell</h3>
-            <div class="value" id="sellValue">---</div>
-            <div class="sub">Curve (premium)</div>
-        </div>
-        <div class="node" id="nodeProfit" style="left: 1100px; top: 200px;">
-            <h3><i class="fa-regular fa-circle-check"></i> 5. P&L</h3>
-            <div class="value" id="profitValue" style="color:var(--accent-green);">$0.00</div>
-            <div class="sub">net after gas</div>
-        </div>
+    <div class="ambient-bg">
+        <div class="grid-overlay"></div>
     </div>
 
-    <!-- DASHBOARD (right) -->
-    <div id="dashboard">
-        <div class="card">
-            <div class="card-title"><span>📊 Market prices</span> <i class="fa-regular fa-chart-mixed"></i></div>
-            <div class="metric-grid">
-                <div class="metric"><span class="label">Uniswap (DAI)</span><div class="num" id="priceA">$1.0000</div></div>
-                <div class="metric"><span class="label">Curve (USDC)</span><div class="num" id="priceB">$1.0000</div></div>
+    <div class="app-container">
+        <!-- HEADER -->
+        <header>
+            <div class="logo-group">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <div class="logo-text">ArbFlow <span>/ Real-time</span></div>
+            </div>
+            <div class="header-actions">
+                <div class="status-indicator" id="statusIndicator">
+                    <div class="status-dot"></div>
+                    <span id="statusText">SCANNING</span>
+                </div>
+                <div class="balance-display">Balance: <span id="balanceValue">$10,000.00</span></div>
+            </div>
+        </header>
+
+        <!-- WORKFLOW CANVAS -->
+        <div id="workflow-canvas">
+            <svg class="wire-svg" id="wireSvg"></svg>
+            
+            <!-- NODE 1: Market Scan -->
+            <div class="node-card" id="node-scan" style="left: 60px; top: 180px;">
+                <div class="node-header">
+                    <div class="node-icon">
+                        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    </div>
+                    <div class="node-title">1. Market Scan</div>
+                </div>
+                <div class="node-value" id="spreadDisplay">0.000%</div>
+                <div class="node-sub">DAI/USDC spread</div>
+            </div>
+
+            <!-- NODE 2: Buy Order -->
+            <div class="node-card" id="node-buy" style="left: 300px; top: 80px;">
+                <div class="node-header">
+                    <div class="node-icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 2v20M17 7l-5-5-5 5"/></svg>
+                    </div>
+                    <div class="node-title">2. Buy</div>
+                </div>
+                <div class="node-value" id="buyDisplay">---</div>
+                <div class="node-sub">Uniswap V3</div>
+            </div>
+
+            <!-- NODE 3: Bridge -->
+            <div class="node-card" id="node-bridge" style="left: 540px; top: 200px;">
+                <div class="node-header">
+                    <div class="node-icon">
+                        <svg viewBox="0 0 24 24"><path d="M8 7h8M8 17h8M6 7l-2 5 2 5M18 7l2 5-2 5"/></svg>
+                    </div>
+                    <div class="node-title">3. Bridge</div>
+                </div>
+                <div class="node-value" id="bridgeDisplay">---</div>
+                <div class="node-sub">Cross-chain relay</div>
+            </div>
+
+            <!-- NODE 4: Sell -->
+            <div class="node-card" id="node-sell" style="left: 780px; top: 100px;">
+                <div class="node-header">
+                    <div class="node-icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 22V2M7 17l5 5 5-5"/></svg>
+                    </div>
+                    <div class="node-title">4. Sell</div>
+                </div>
+                <div class="node-value" id="sellDisplay">---</div>
+                <div class="node-sub">Curve Finance</div>
+            </div>
+
+            <!-- NODE 5: Profit -->
+            <div class="node-card" id="node-profit" style="left: 1000px; top: 220px;">
+                <div class="node-header">
+                    <div class="node-icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                    </div>
+                    <div class="node-title">5. Profit</div>
+                </div>
+                <div class="node-value" id="profitDisplay">$0.00</div>
+                <div class="node-sub">Net after gas</div>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-title"><span>⚡ Live spread</span> <span style="color:var(--accent-green);">threshold 0.05%</span></div>
-            <div id="chart-container">
-                <svg id="spreadChart" preserveAspectRatio="none">
-                    <path id="chartFill" class="chart-fill" d=""/>
-                    <path id="chartLine" class="chart-line" d=""/>
-                    <line id="thresholdLine" class="threshold-line" x1="0" y1="0" x2="100%" y2="0"/>
-                </svg>
+        <!-- DASHBOARD -->
+        <div id="dashboard">
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <div class="dash-card-title">Market Prices</div>
+                </div>
+                <div class="price-grid">
+                    <div class="price-item">
+                        <div class="price-label">Uniswap (DAI)</div>
+                        <div class="price-value" id="priceA">$1.00000</div>
+                    </div>
+                    <div class="price-item">
+                        <div class="price-label">Curve (USDC)</div>
+                        <div class="price-value" id="priceB">$1.00000</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <div class="dash-card-title">Spread Analysis</div>
+                    <div class="dash-card-badge">Threshold: 0.05%</div>
+                </div>
+                <div class="chart-wrapper">
+                    <svg class="chart-svg" id="chartSvg" viewBox="0 0 340 140" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="rgba(6, 182, 212, 0.3)"/>
+                                <stop offset="100%" stop-color="rgba(6, 182, 212, 0)"/>
+                            </linearGradient>
+                        </defs>
+                        <line class="chart-threshold" id="thresholdLine" x1="0" x2="340"/>
+                        <path class="chart-area" id="chartArea"/>
+                        <path class="chart-line" id="chartLine"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <div class="dash-card-title">Bot Statistics</div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Total Trades</div>
+                        <div class="stat-value" id="tradeCount">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Net Profit</div>
+                        <div class="stat-value" id="totalProfit">$0.00</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-title">📈 bot stats</div>
-            <div class="metric-grid">
-                <div class="metric profit"><span class="label">trades</span><div class="num" id="tradeCount">0</div></div>
-                <div class="metric profit"><span class="label">net profit</span><div class="num" id="netProfit">$0.00</div></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- LOGS PANEL -->
-    <div id="logs">
-        <!-- dynamic log entries appear here (newest at bottom) -->
+        <!-- LOGS -->
+        <div id="logs-panel"></div>
     </div>
 
     <script>
-        (function() {
-            // ---------- CONFIG ----------
+        const ArbBot = (function() {
+            // Configuration
             const CONFIG = {
-                threshold: 0.05,            // 0.05% spread required
-                tradeSize: 5000,             // $5000 per arb
-                gasCost: 2.50,
-                tickMs: 800,
-                volatility: 0.0002,
-                spikeProb: 0.08,
-                chartMax: 0.2,               // 0.2% y-axis max
+                threshold: 0.05,
+                tradeSize: 5000,
+                gasCost: 3.50,
+                tickInterval: 600,
+                volatility: 0.00025,
+                spikeProbability: 0.06,
+                chartPoints: 50,
+                chartMaxValue: 0.15
             };
 
-            // ---------- STATE ----------
+            // State
             const state = {
-                priceA: 1.0000,
-                priceB: 1.0000,
+                priceA: 1.00000,
+                priceB: 1.00000,
                 spread: 0,
                 balance: 10000.00,
                 totalProfit: 0,
                 tradeCount: 0,
                 isTrading: false,
-                spreadHistory: new Array(50).fill(0),
+                spreadHistory: [],
+                nodes: {}
             };
 
-            // ---------- DOM elements ----------
-            const ui = {
-                status: document.getElementById('botStatus'),
-                statusPill: document.getElementById('statusPill'),
-                balance: document.getElementById('balance'),
-                priceA: document.getElementById('priceA'),
-                priceB: document.getElementById('priceB'),
-                spreadValue: document.getElementById('spreadValue'),
-                buyValue: document.getElementById('buyValue'),
-                bridgeValue: document.getElementById('bridgeValue'),
-                sellValue: document.getElementById('sellValue'),
-                profitValue: document.getElementById('profitValue'),
-                tradeCount: document.getElementById('tradeCount'),
-                netProfit: document.getElementById('netProfit'),
-                chartLine: document.getElementById('chartLine'),
-                chartFill: document.getElementById('chartFill'),
-                thresholdLine: document.getElementById('thresholdLine'),
-                logs: document.getElementById('logs'),
-                packet: document.getElementById('dataPacket'),
-                wiresLayer: document.getElementById('wiresLayer'),
-                nodes: {
-                    scan: document.getElementById('nodeScan'),
-                    buy: document.getElementById('nodeBuy'),
-                    bridge: document.getElementById('nodeBridge'),
-                    sell: document.getElementById('nodeSell'),
-                    profit: document.getElementById('nodeProfit')
-                }
-            };
+            // DOM References
+            let elements = {};
 
-            // ---------- HELPER: log ----------
-            function log(message, type = 'info') {
-                const entry = document.createElement('div');
-                entry.className = 'log-entry';
-                const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                entry.innerHTML = `<span class="log-time">${time}</span><span class="log-msg ${type}">${message}</span>`;
-                ui.logs.appendChild(entry);
-                if (ui.logs.children.length > 25) ui.logs.removeChild(ui.logs.children[0]);
-                // auto-scroll to bottom (newest)
-                ui.logs.scrollTop = ui.logs.scrollHeight;
+            // Node connection definitions
+            const connections = [
+                { from: 'node-scan', to: 'node-buy' },
+                { from: 'node-buy', to: 'node-bridge' },
+                { from: 'node-bridge', to: 'node-sell' },
+                { from: 'node-sell', to: 'node-profit' }
+            ];
+
+            // Initialize spread history
+            function initSpreadHistory() {
+                state.spreadHistory = new Array(CONFIG.chartPoints).fill(0);
             }
 
-            // ---------- WIRING (paths between nodes) ----------
-            function drawWires() {
-                const container = document.getElementById('workflow');
-                const nodes = [
-                    { id: 'nodeScan', el: ui.nodes.scan },
-                    { id: 'nodeBuy', el: ui.nodes.buy },
-                    { id: 'nodeBridge', el: ui.nodes.bridge },
-                    { id: 'nodeSell', el: ui.nodes.sell },
-                    { id: 'nodeProfit', el: ui.nodes.profit }
-                ];
+            // DOM element caching
+            function cacheElements() {
+                elements = {
+                    statusIndicator: document.getElementById('statusIndicator'),
+                    statusText: document.getElementById('statusText'),
+                    balanceValue: document.getElementById('balanceValue'),
+                    priceA: document.getElementById('priceA'),
+                    priceB: document.getElementById('priceB'),
+                    spreadDisplay: document.getElementById('spreadDisplay'),
+                    buyDisplay: document.getElementById('buyDisplay'),
+                    bridgeDisplay: document.getElementById('bridgeDisplay'),
+                    sellDisplay: document.getElementById('sellDisplay'),
+                    profitDisplay: document.getElementById('profitDisplay'),
+                    tradeCount: document.getElementById('tradeCount'),
+                    totalProfit: document.getElementById('totalProfit'),
+                    chartLine: document.getElementById('chartLine'),
+                    chartArea: document.getElementById('chartArea'),
+                    thresholdLine: document.getElementById('thresholdLine'),
+                    logsPanel: document.getElementById('logs-panel'),
+                    wireSvg: document.getElementById('wireSvg'),
+                    workflowCanvas: document.getElementById('workflow-canvas')
+                };
 
-                // connections in order
-                const links = [
-                    { from: 'nodeScan', to: 'nodeBuy' },
-                    { from: 'nodeBuy', to: 'nodeBridge' },
-                    { from: 'nodeBridge', to: 'nodeSell' },
-                    { from: 'nodeSell', to: 'nodeProfit' }
-                ];
-
-                const containerRect = container.getBoundingClientRect();
-                let svgPaths = '';
-
-                links.forEach(link => {
-                    const fromEl = document.getElementById(link.from);
-                    const toEl = document.getElementById(link.to);
-                    if (!fromEl || !toEl) return;
-
-                    const fromRect = fromEl.getBoundingClientRect();
-                    const toRect = toEl.getBoundingClientRect();
-
-                    // relative to container
-                    const x1 = fromRect.right - containerRect.left - 5;  // right edge
-                    const y1 = fromRect.top + fromRect.height/2 - containerRect.top;
-                    const x2 = toRect.left - containerRect.left + 5;      // left edge
-                    const y2 = toRect.top + toRect.height/2 - containerRect.top;
-
-                    // store path data for animation on the target node (use dataset)
-                    const pathData = `M ${x1} ${y1} C ${x1 + 80} ${y1}, ${x2 - 80} ${y2}, ${x2} ${y2}`;
-                    toEl.dataset.pathFrom = link.from;
-                    toEl.dataset.pathData = pathData;
-
-                    svgPaths += `<path d="${pathData}" class="wire" id="wire-${link.from}-${link.to}" />`;
-                });
-
-                ui.wiresLayer.innerHTML = svgPaths;
-            }
-
-            // ---------- PACKET ANIMATION (smooth) ----------
-            function animatePacket(fromId, toId, onComplete) {
-                const toEl = document.getElementById(toId);
-                if (!toEl || !toEl.dataset.pathData) return;
-
-                const packet = ui.packet;
-                const pathData = toEl.dataset.pathData;
-
-                // stop any ongoing animation
-                packet.getAnimations().forEach(anim => anim.cancel());
-
-                packet.style.display = 'block';
-                packet.style.offsetPath = `path('${pathData}')`;
-                packet.style.offsetDistance = '0%';
-
-                // animate with Web Animations API
-                const animation = packet.animate(
-                    [{ offsetDistance: '0%' }, { offsetDistance: '100%' }],
-                    { duration: 800, easing: 'linear', fill: 'forwards' }
-                );
-
-                // highlight the wire during packet travel
-                const wireId = `#wire-${fromId}-${toId}`;
-                const wire = document.querySelector(wireId);
-                if (wire) wire.classList.add('active');
-
-                animation.onfinish = () => {
-                    packet.style.display = 'none';
-                    if (wire) wire.classList.remove('active');
-                    if (onComplete) onComplete();
+                // Cache nodes
+                state.nodes = {
+                    scan: document.getElementById('node-scan'),
+                    buy: document.getElementById('node-buy'),
+                    bridge: document.getElementById('node-bridge'),
+                    sell: document.getElementById('node-sell'),
+                    profit: document.getElementById('node-profit')
                 };
             }
 
-            // ---------- NODE STATE HELPERS ----------
-            function resetNodeStyles() {
-                Object.values(ui.nodes).forEach(n => {
-                    n.classList.remove('scanning', 'processing', 'success');
+            // Utility: Log entry
+            function log(message, type = 'info') {
+                const time = new Date().toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit',
+                    hour12: false 
                 });
-                // also reset wires
-                document.querySelectorAll('.wire').forEach(w => w.classList.remove('active'));
+                
+                const row = document.createElement('div');
+                row.className = 'log-row';
+                row.innerHTML = `
+                    <span class="log-time">${time}</span>
+                    <span class="log-type ${type}"></span>
+                    <span class="log-msg ${type}">${message}</span>
+                `;
+                
+                elements.logsPanel.appendChild(row);
+                
+                // Keep only last 30 logs
+                while (elements.logsPanel.children.length > 30) {
+                    elements.logsPanel.removeChild(elements.logsPanel.firstChild);
+                }
+                
+                // Auto-scroll
+                elements.logsPanel.scrollTop = elements.logsPanel.scrollHeight;
             }
 
-            function setNodeState(nodeId, stateClass) {
-                const node = ui.nodes[nodeId];
+            // Draw wire connections between nodes
+            function drawWires() {
+                const canvas = elements.workflowCanvas;
+                const canvasRect = canvas.getBoundingClientRect();
+                
+                let pathsHTML = '';
+
+                connections.forEach(conn => {
+                    const fromNode = document.getElementById(conn.from);
+                    const toNode = document.getElementById(conn.to);
+                    
+                    if (!fromNode || !toNode) return;
+
+                    const fromRect = fromNode.getBoundingClientRect();
+                    const toRect = toNode.getBoundingClientRect();
+
+                    // Calculate connection points (right edge of from, left edge of to)
+                    const x1 = fromRect.right - canvasRect.left;
+                    const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
+                    const x2 = toRect.left - canvasRect.left;
+                    const y2 = toRect.top + toRect.height / 2 - canvasRect.top;
+
+                    // Create curved path
+                    const midX = (x1 + x2) / 2;
+                    const ctrlOffset = Math.min(100, Math.abs(x2 - x1) * 0.4);
+                    
+                    const pathD = `M ${x1} ${y1} C ${x1 + ctrlOffset} ${y1}, ${x2 - ctrlOffset} ${y2}, ${x2} ${y2}`;
+
+                    // Store path for animation
+                    toNode.dataset.wirePath = pathD;
+                    toNode.dataset.wireFrom = conn.from;
+
+                    pathsHTML += `
+                        <path 
+                            class="wire-path" 
+                            id="wire-${conn.from}-${conn.to}"
+                            d="${pathD}"
+                        />
+                    `;
+                });
+
+                elements.wireSvg.innerHTML = pathsHTML;
+            }
+
+            // Animate packet along wire
+            function animatePacket(toNodeId, callback) {
+                const toNode = document.getElementById(toNodeId);
+                if (!toNode || !toNode.dataset.wirePath) {
+                    if (callback) callback();
+                    return;
+                }
+
+                const wireId = `wire-${toNode.dataset.wireFrom}-${toNodeId}`;
+                const wire = document.getElementById(wireId);
+                const pathD = toNode.dataset.wirePath;
+
+                // Create packet element
+                const packet = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                packet.setAttribute('r', '5');
+                packet.setAttribute('class', 'wire-packet');
+                packet.style.offsetPath = `path('${pathD}')`;
+                packet.style.offsetDistance = '0%';
+                elements.wireSvg.appendChild(packet);
+
+                // Highlight wire
+                if (wire) wire.classList.add('active');
+
+                // Animate
+                let startTime = null;
+                const duration = 500;
+
+                function animate(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    
+                    packet.style.offsetDistance = `${progress * 100}%`;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        packet.remove();
+                        if (wire) wire.classList.remove('active');
+                        if (callback) callback();
+                    }
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            // Update node visual state
+            function setNodeState(nodeKey, stateClass) {
+                const node = state.nodes[nodeKey];
                 if (!node) return;
-                node.classList.remove('scanning', 'processing', 'success');
+                
+                node.classList.remove('active', 'processing', 'success');
                 if (stateClass) node.classList.add(stateClass);
             }
 
-            // ---------- MARKET SIMULATION ----------
+            // Reset all node states
+            function resetNodes() {
+                Object.values(state.nodes).forEach(node => {
+                    node.classList.remove('active', 'processing', 'success');
+                });
+            }
+
+            // Update market simulation
             function updateMarket() {
-                if (state.isTrading) return; // no price updates during trade (for clean demo)
+                if (state.isTrading) return;
 
-                // random walk
-                const moveA = (Math.random() - 0.5) * CONFIG.volatility;
-                const moveB = (Math.random() - 0.5) * CONFIG.volatility;
+                // Random walk for both prices
+                const deltaA = (Math.random() - 0.5) * CONFIG.volatility;
+                const deltaB = (Math.random() - 0.5) * CONFIG.volatility;
 
-                // occasional spike
-                if (Math.random() < CONFIG.spikeProb) {
+                // Occasional arbitrage opportunity spike
+                if (Math.random() < CONFIG.spikeProbability) {
+                    // Create opportunity by moving prices apart
                     if (Math.random() > 0.5) {
-                        state.priceB += CONFIG.volatility * 3; // B jumps (sell higher)
+                        state.priceB += CONFIG.volatility * 4; // Sell price increases
                     } else {
-                        state.priceA -= CONFIG.volatility * 3; // A drops (buy lower)
+                        state.priceA -= CONFIG.volatility * 4; // Buy price decreases
                     }
                 } else {
-                    state.priceA += moveA;
-                    state.priceB += moveB;
+                    state.priceA += deltaA;
+                    state.priceB += deltaB;
                 }
 
-                // keep around $1.00
-                state.priceA = 1.0 + (state.priceA - 1.0) * 0.99;
-                state.priceB = 1.0 + (state.priceB - 1.0) * 0.99;
-                if (state.priceA < 0.999) state.priceA = 0.999 + Math.random()*0.0005;
-                if (state.priceB > 1.001) state.priceB = 1.001 - Math.random()*0.0005;
+                // Mean reversion
+                state.priceA = 1.0 + (state.priceA - 1.0) * 0.98;
+                state.priceB = 1.0 + (state.priceB - 1.0) * 0.98;
 
-                // spread %
+                // Bounds
+                state.priceA = Math.max(0.9990, Math.min(1.0010, state.priceA));
+                state.priceB = Math.max(0.9990, Math.min(1.0020, state.priceB));
+
+                // Calculate spread
                 state.spread = ((state.priceB - state.priceA) / state.priceA) * 100;
             }
 
-            function updateUI() {
-                ui.priceA.innerText = '$' + state.priceA.toFixed(5);
-                ui.priceB.innerText = '$' + state.priceB.toFixed(5);
-                ui.spreadValue.innerText = (state.spread > 0 ? '+' : '') + state.spread.toFixed(3) + '%';
-                ui.spreadValue.style.color = state.spread >= CONFIG.threshold ? 'var(--accent-green)' : 'var(--text-primary)';
-                ui.balance.innerText = state.balance.toFixed(2);
-                ui.tradeCount.innerText = state.tradeCount;
-                ui.netProfit.innerText = '$' + state.totalProfit.toFixed(2);
+            // Update UI displays
+            function updateDisplays() {
+                elements.priceA.textContent = '$' + state.priceA.toFixed(5);
+                elements.priceB.textContent = '$' + state.priceB.toFixed(5);
+                
+                const spreadText = (state.spread >= 0 ? '+' : '') + state.spread.toFixed(3) + '%';
+                elements.spreadDisplay.textContent = spreadText;
+                elements.spreadDisplay.style.color = state.spread >= CONFIG.threshold ? 'var(--emerald)' : 'var(--text-bright)';
+
+                elements.balanceValue.textContent = '$' + state.balance.toFixed(2);
+                elements.tradeCount.textContent = state.tradeCount;
+                elements.totalProfit.textContent = '$' + state.totalProfit.toFixed(2);
             }
 
-            // update chart (sparkline)
+            // Update chart
             function updateChart() {
                 state.spreadHistory.push(state.spread);
-                state.spreadHistory.shift();
-
-                const width = ui.chartLine.parentElement.clientWidth || 400;
-                const height = ui.chartLine.parentElement.clientHeight || 150;
-                const maxVal = CONFIG.chartMax; // 0.2% y max
-
-                // generate points
-                let points = [];
-                state.spreadHistory.forEach((val, i) => {
-                    const x = (i / (state.spreadHistory.length - 1)) * width;
-                    const y = height - (Math.min(val, maxVal) / maxVal) * height;
-                    points.push([x, y]);
-                });
-
-                // line
-                let lineD = 'M' + points.map(p => p.join(' ')).join(' L');
-                ui.chartLine.setAttribute('d', lineD);
-
-                // area fill
-                if (points.length > 1) {
-                    let areaD = `M0,${height} L` + points.map(p => `${p[0]},${p[1]}`).join(' ') + ` L${width},${height} Z`;
-                    ui.chartFill.setAttribute('d', areaD);
+                if (state.spreadHistory.length > CONFIG.chartPoints) {
+                    state.spreadHistory.shift();
                 }
 
-                // threshold line
-                const thresholdY = height - (CONFIG.threshold / maxVal) * height;
-                ui.thresholdLine.setAttribute('y1', thresholdY);
-                ui.thresholdLine.setAttribute('y2', thresholdY);
+                const width = 340;
+                const height = 140;
+                const maxVal = CONFIG.chartMaxValue;
+                const padding = 5;
+
+                // Build path points
+                const points = state.spreadHistory.map((val, i) => {
+                    const x = (i / (CONFIG.chartPoints - 1)) * width;
+                    const y = height - padding - (Math.max(0, Math.min(val, maxVal)) / maxVal) * (height - padding * 2);
+                    return { x, y };
+                });
+
+                // Line path
+                const lineD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+                elements.chartLine.setAttribute('d', lineD);
+
+                // Area path
+                const areaD = lineD + ` L ${width} ${height} L 0 ${height} Z`;
+                elements.chartArea.setAttribute('d', areaD);
+
+                // Threshold line position
+                const thresholdY = height - padding - (CONFIG.threshold / maxVal) * (height - padding * 2);
+                elements.thresholdLine.setAttribute('y1', thresholdY);
+                elements.thresholdLine.setAttribute('y2', thresholdY);
             }
 
-            // ---------- TRADE EXECUTION (sequenced) ----------
+            // Execute trade sequence
             function executeTrade() {
                 if (state.isTrading) return;
+
                 const grossProfit = CONFIG.tradeSize * (state.spread / 100);
                 if (state.spread < CONFIG.threshold || grossProfit <= CONFIG.gasCost) return;
 
                 state.isTrading = true;
-                resetNodeStyles();
-                log(`🔥 Opportunity! spread ${state.spread.toFixed(3)}%`, 'warn');
-                ui.status.innerText = 'EXECUTING';
-                ui.statusPill.style.borderColor = 'var(--accent-orange)';
-                ui.statusPill.style.color = 'var(--accent-orange)';
 
-                // step 1: scan active (already scanning)
-                setNodeState('scan', 'scanning');
+                // Update status
+                elements.statusIndicator.classList.add('executing');
+                elements.statusText.textContent = 'EXECUTING';
+
+                log(`Opportunity detected: ${state.spread.toFixed(3)}% spread`, 'warn');
+                resetNodes();
+
+                // Step 1: Scan
+                setNodeState('scan', 'active');
 
                 setTimeout(() => {
-                    // step 2: buy
+                    // Step 2: Buy
                     setNodeState('buy', 'processing');
-                    ui.buyValue.innerText = CONFIG.tradeSize + ' DAI';
-                    animatePacket('nodeScan', 'nodeBuy', () => {
+                    elements.buyDisplay.textContent = CONFIG.tradeSize.toLocaleString() + ' DAI';
+                    
+                    animatePacket('node-buy', () => {
                         setNodeState('buy', 'success');
-                        log(`Bought ${CONFIG.tradeSize} DAI @ ${state.priceA.toFixed(5)}`, 'info');
+                        log(`Bought ${CONFIG.tradeSize.toLocaleString()} DAI @ ${state.priceA.toFixed(5)}`, 'info');
 
-                        // step 3: bridge
                         setTimeout(() => {
+                            // Step 3: Bridge
                             setNodeState('bridge', 'processing');
-                            ui.bridgeValue.innerText = CONFIG.tradeSize + ' DAI';
-                            animatePacket('nodeBuy', 'nodeBridge', () => {
+                            elements.bridgeDisplay.textContent = CONFIG.tradeSize.toLocaleString() + ' DAI';
+
+                            animatePacket('node-bridge', () => {
                                 setNodeState('bridge', 'success');
 
-                                // step 4: sell
                                 setTimeout(() => {
+                                    // Step 4: Sell
                                     setNodeState('sell', 'processing');
-                                    const sellAmount = CONFIG.tradeSize * (1 + state.spread/100);
-                                    ui.sellValue.innerText = sellAmount.toFixed(2) + ' USDC';
-                                    animatePacket('nodeBridge', 'nodeSell', () => {
+                                    const sellAmount = CONFIG.tradeSize * (1 + state.spread / 100);
+                                    elements.sellDisplay.textContent = sellAmount.toFixed(2) + ' USDC';
+
+                                    animatePacket('node-sell', () => {
                                         setNodeState('sell', 'success');
 
-                                        // step 5: profit
                                         setTimeout(() => {
+                                            // Step 5: Profit
                                             setNodeState('profit', 'processing');
-                                            const net = (CONFIG.tradeSize * (state.spread/100)) - CONFIG.gasCost;
-                                            state.balance += net;
-                                            state.totalProfit += net;
+                                            const netProfit = grossProfit - CONFIG.gasCost;
+                                            
+                                            state.balance += netProfit;
+                                            state.totalProfit += netProfit;
                                             state.tradeCount++;
-                                            ui.profitValue.innerText = '+$' + net.toFixed(2);
-                                            animatePacket('nodeSell', 'nodeProfit', () => {
+
+                                            elements.profitDisplay.textContent = '+$' + netProfit.toFixed(2);
+                                            elements.profitDisplay.style.color = 'var(--emerald)';
+
+                                            animatePacket('node-profit', () => {
                                                 setNodeState('profit', 'success');
-                                                log(`✅ Profit realized: $${net.toFixed(2)} (after gas)`, 'success');
-                                                finishTrade();
+                                                log(`Profit realized: $${netProfit.toFixed(2)} (after $${CONFIG.gasCost} gas)`, 'success');
+
+                                                // Reset after delay
+                                                setTimeout(() => {
+                                                    resetNodes();
+                                                    state.isTrading = false;
+                                                    elements.statusIndicator.classList.remove('executing');
+                                                    elements.statusText.textContent = 'SCANNING';
+                                                }, 800);
                                             });
-                                        }, 400);
+                                        }, 300);
                                     });
-                                }, 400);
+                                }, 300);
                             });
-                        }, 600);
+                        }, 400);
                     });
                 }, 300);
             }
 
-            function finishTrade() {
-                // reset after a moment
-                setTimeout(() => {
-                    resetNodeStyles();
-                    state.isTrading = false;
-                    ui.status.innerText = 'SCANNING';
-                    ui.statusPill.style.borderColor = 'var(--accent-green)';
-                    ui.statusPill.style.color = 'var(--accent-green)';
-                }, 600);
-            }
-
-            // ---------- MAIN LOOP ----------
+            // Main tick
             function tick() {
-                if (!state.isTrading) {
-                    updateMarket();
-                    updateUI();
-                    updateChart();
-                }
+                updateMarket();
+                updateDisplays();
+                updateChart();
 
-                // check trade condition even if not trading (triggers only if not trading)
-                if (!state.isTrading) {
-                    const gross = CONFIG.tradeSize * (state.spread / 100);
-                    if (state.spread >= CONFIG.threshold && gross > CONFIG.gasCost) {
+                if (!state.isTrading && state.spread >= CONFIG.threshold) {
+                    const grossProfit = CONFIG.tradeSize * (state.spread / 100);
+                    if (grossProfit > CONFIG.gasCost) {
                         executeTrade();
                     }
                 }
             }
 
-            // ---------- INIT ----------
-            window.addEventListener('load', () => {
+            // Initialize
+            function init() {
+                initSpreadHistory();
+                cacheElements();
                 drawWires();
-                window.addEventListener('resize', drawWires);
-                log('System ready · threshold 0.05%', 'info');
-                setInterval(tick, CONFIG.tickMs);
-            });
 
+                // Redraw wires on resize
+                let resizeTimeout = null;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(drawWires, 100);
+                });
+
+                log('Arbitrage bot initialized', 'info');
+                log(`Threshold: ${CONFIG.threshold}% | Trade size: $${CONFIG.tradeSize.toLocaleString()}`, 'info');
+
+                // Start main loop
+                setInterval(tick, CONFIG.tickInterval);
+            }
+
+            // Run on load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+
+            return { state, CONFIG };
         })();
     </script>
 </body>
