@@ -3,9 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arbitrage Bot · Professional Workflow</title>
+    <title>Arbitrage · MEXC conditional workflow</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         :root {
             --bg-void: #06080d;
             --bg-deep: #0b0f18;
@@ -13,7 +19,6 @@
             --bg-panel: #1a2234;
             --bg-card: #1e2738;
             --border-dim: #2a3444;
-            --border-glow: #3b82f6;
             --text-bright: #f1f5f9;
             --text-muted: #7a8ba3;
             --text-dim: #4a5a70;
@@ -29,12 +34,6 @@
             --wire-active: #06b6d4;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             font-family: 'Space Grotesk', sans-serif;
             background: var(--bg-void);
@@ -43,7 +42,6 @@
             overflow: hidden;
         }
 
-        /* ===== AMBIENT BACKGROUND ===== */
         .ambient-bg {
             position: fixed;
             inset: 0;
@@ -81,7 +79,6 @@
             mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 70%);
         }
 
-        /* ===== MAIN LAYOUT ===== */
         .app-container {
             position: relative;
             z-index: 1;
@@ -91,7 +88,6 @@
             height: 100vh;
         }
 
-        /* ===== HEADER ===== */
         header {
             grid-column: 1 / -1;
             display: flex;
@@ -154,7 +150,6 @@
             border-radius: 100px;
             font-size: 0.85rem;
             font-weight: 600;
-            letter-spacing: 0.03em;
             transition: all 0.3s ease;
         }
 
@@ -201,7 +196,79 @@
             color: var(--emerald);
         }
 
-        /* ===== WORKFLOW CANVAS ===== */
+        /* MEXC control strip */
+        .mexc-control {
+            position: absolute;
+            top: 80px;
+            left: 28px;
+            z-index: 20;
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 40px;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .mexc-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mexc-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .mexc-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--cyan);
+        }
+
+        .mexc-threshold {
+            font-size: 0.8rem;
+            padding: 4px 12px;
+            background: rgba(245, 158, 11, 0.15);
+            border-radius: 40px;
+            color: var(--amber);
+        }
+
+        .mexc-threshold.met {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--emerald);
+        }
+
+        .toggle-activate {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-dim);
+            border-radius: 40px;
+            padding: 8px 24px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-activate.active {
+            background: var(--emerald);
+            color: black;
+            border-color: var(--emerald);
+        }
+
+        .toggle-activate.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
         #workflow-canvas {
             position: relative;
             background: transparent;
@@ -235,7 +302,6 @@
             filter: drop-shadow(0 0 12px var(--cyan));
         }
 
-        /* ===== NODE CARDS ===== */
         .node-card {
             position: absolute;
             width: 190px;
@@ -303,10 +369,6 @@
             stroke-width: 2;
         }
 
-        .node-card.active .node-icon svg { stroke: var(--cyan); }
-        .node-card.processing .node-icon svg { stroke: var(--amber); }
-        .node-card.success .node-icon svg { stroke: var(--emerald); }
-
         .node-title {
             font-size: 0.7rem;
             font-weight: 600;
@@ -332,7 +394,6 @@
             color: var(--text-dim);
         }
 
-        /* ===== DASHBOARD PANEL ===== */
         #dashboard {
             background: var(--bg-deep);
             border-left: 1px solid var(--border-dim);
@@ -400,7 +461,6 @@
             color: var(--cyan);
         }
 
-        /* ===== CHART ===== */
         .chart-wrapper {
             height: 140px;
             position: relative;
@@ -416,8 +476,6 @@
             fill: none;
             stroke: var(--cyan);
             stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
         }
 
         .chart-area {
@@ -430,12 +488,6 @@
             stroke-dasharray: 4 4;
         }
 
-        .chart-label {
-            font-size: 0.6rem;
-            fill: var(--text-dim);
-        }
-
-        /* ===== STATS GRID ===== */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -462,7 +514,6 @@
             color: var(--emerald);
         }
 
-        /* ===== LOGS PANEL ===== */
         #logs-panel {
             grid-column: 1 / 2;
             background: var(--bg-deep);
@@ -502,7 +553,6 @@
         .log-type.info { background: var(--cyan); }
         .log-type.warn { background: var(--amber); }
         .log-type.success { background: var(--emerald); }
-        .log-type.error { background: var(--rose); }
 
         .log-msg {
             color: var(--text-muted);
@@ -510,48 +560,18 @@
 
         .log-msg.success { color: var(--emerald); }
         .log-msg.warn { color: var(--amber); }
-
-        /* ===== REDUCED MOTION ===== */
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
-
-        /* ===== SCROLLBAR ===== */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-void);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--border-dim);
-            border-radius: 3px;
-        }
     </style>
 </head>
 <body>
-    <div class="ambient-bg">
-        <div class="grid-overlay"></div>
-    </div>
+    <div class="ambient-bg"><div class="grid-overlay"></div></div>
 
     <div class="app-container">
-        <!-- HEADER -->
         <header>
             <div class="logo-group">
                 <div class="logo-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                        <path d="M2 17l10 5 10-5"/>
-                        <path d="M2 12l10 5 10-5"/>
-                    </svg>
+                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                 </div>
-                <div class="logo-text">ArbFlow <span>/ Real-time</span></div>
+                <div class="logo-text">MEXC Arb <span>/ conditional</span></div>
             </div>
             <div class="header-actions">
                 <div class="status-indicator" id="statusIndicator">
@@ -562,102 +582,77 @@
             </div>
         </header>
 
-        <!-- WORKFLOW CANVAS -->
+        <!-- MEXC control bar (floating) -->
+        <div class="mexc-control">
+            <div class="mexc-item">
+                <span class="mexc-label">MEXC ask</span>
+                <span class="mexc-value" id="mexcAsk">$3.00</span>
+            </div>
+            <div class="mexc-item">
+                <span class="mexc-label">Fee (gas)</span>
+                <span class="mexc-value" id="feeDisplay">$20</span>
+            </div>
+            <div class="mexc-item">
+                <span class="mexc-label">2× fee</span>
+                <span class="mexc-value" id="twiceFee">$40.00</span>
+            </div>
+            <div class="mexc-item">
+                <span class="mexc-label">Gross profit</span>
+                <span class="mexc-value" id="grossProfit">$0.00</span>
+            </div>
+            <div class="mexc-threshold" id="thresholdBadge">⚡ threshold not met</div>
+            <div class="toggle-activate disabled" id="toggleBtn">▶ activate full process</div>
+        </div>
+
+        <!-- Workflow canvas with nodes -->
         <div id="workflow-canvas">
             <svg class="wire-svg" id="wireSvg"></svg>
-            
-            <!-- NODE 1: Market Scan -->
-            <div class="node-card" id="node-scan" style="left: 60px; top: 180px;">
-                <div class="node-header">
-                    <div class="node-icon">
-                        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                    </div>
-                    <div class="node-title">1. Market Scan</div>
-                </div>
+
+            <div class="node-card" id="node-scan" style="left: 60px; top: 240px;">
+                <div class="node-header"><div class="node-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div><div class="node-title">1. Market Scan</div></div>
                 <div class="node-value" id="spreadDisplay">0.000%</div>
-                <div class="node-sub">DAI/USDC spread</div>
+                <div class="node-sub">spread (EVM - MEXC)</div>
             </div>
 
-            <!-- NODE 2: Buy Order -->
-            <div class="node-card" id="node-buy" style="left: 300px; top: 80px;">
-                <div class="node-header">
-                    <div class="node-icon">
-                        <svg viewBox="0 0 24 24"><path d="M12 2v20M17 7l-5-5-5 5"/></svg>
-                    </div>
-                    <div class="node-title">2. Buy</div>
-                </div>
+            <div class="node-card" id="node-buy" style="left: 300px; top: 140px;">
+                <div class="node-header"><div class="node-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 7l-5-5-5 5"/></svg></div><div class="node-title">2. Buy on MEXC</div></div>
                 <div class="node-value" id="buyDisplay">---</div>
-                <div class="node-sub">Uniswap V3</div>
+                <div class="node-sub">1,000 ZEPH</div>
             </div>
 
-            <!-- NODE 3: Bridge -->
-            <div class="node-card" id="node-bridge" style="left: 540px; top: 200px;">
-                <div class="node-header">
-                    <div class="node-icon">
-                        <svg viewBox="0 0 24 24"><path d="M8 7h8M8 17h8M6 7l-2 5 2 5M18 7l2 5-2 5"/></svg>
-                    </div>
-                    <div class="node-title">3. Bridge</div>
-                </div>
+            <div class="node-card" id="node-bridge" style="left: 540px; top: 260px;">
+                <div class="node-header"><div class="node-icon"><svg viewBox="0 0 24 24"><path d="M8 7h8M8 17h8M6 7l-2 5 2 5M18 7l2 5-2 5"/></svg></div><div class="node-title">3. Wrap / Bridge</div></div>
                 <div class="node-value" id="bridgeDisplay">---</div>
-                <div class="node-sub">Cross-chain relay</div>
+                <div class="node-sub">to wZEPH</div>
             </div>
 
-            <!-- NODE 4: Sell -->
-            <div class="node-card" id="node-sell" style="left: 780px; top: 100px;">
-                <div class="node-header">
-                    <div class="node-icon">
-                        <svg viewBox="0 0 24 24"><path d="M12 22V2M7 17l5 5 5-5"/></svg>
-                    </div>
-                    <div class="node-title">4. Sell</div>
-                </div>
+            <div class="node-card" id="node-sell" style="left: 780px; top: 160px;">
+                <div class="node-header"><div class="node-icon"><svg viewBox="0 0 24 24"><path d="M12 22V2M7 17l5 5 5-5"/></svg></div><div class="node-title">4. Swap & sell</div></div>
                 <div class="node-value" id="sellDisplay">---</div>
-                <div class="node-sub">Curve Finance</div>
+                <div class="node-sub">wZSD → USDT</div>
             </div>
 
-            <!-- NODE 5: Profit -->
-            <div class="node-card" id="node-profit" style="left: 1000px; top: 220px;">
-                <div class="node-header">
-                    <div class="node-icon">
-                        <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                    </div>
-                    <div class="node-title">5. Profit</div>
-                </div>
+            <div class="node-card" id="node-profit" style="left: 1000px; top: 280px;">
+                <div class="node-header"><div class="node-icon"><svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div><div class="node-title">5. P&L</div></div>
                 <div class="node-value" id="profitDisplay">$0.00</div>
-                <div class="node-sub">Net after gas</div>
+                <div class="node-sub">net after gas</div>
             </div>
         </div>
 
-        <!-- DASHBOARD -->
         <div id="dashboard">
             <div class="dash-card">
-                <div class="dash-card-header">
-                    <div class="dash-card-title">Market Prices</div>
-                </div>
+                <div class="dash-card-header"><div class="dash-card-title">Market Prices</div></div>
                 <div class="price-grid">
-                    <div class="price-item">
-                        <div class="price-label">Uniswap (DAI)</div>
-                        <div class="price-value" id="priceA">$1.00000</div>
-                    </div>
-                    <div class="price-item">
-                        <div class="price-label">Curve (USDC)</div>
-                        <div class="price-value" id="priceB">$1.00000</div>
-                    </div>
+                    <div class="price-item"><div class="price-label">MEXC (ZEPH)</div><div class="price-value" id="priceMexc">$3.00000</div></div>
+                    <div class="price-item"><div class="price-label">EVM implied</div><div class="price-value" id="priceEvm">$3.09000</div></div>
                 </div>
             </div>
 
             <div class="dash-card">
-                <div class="dash-card-header">
-                    <div class="dash-card-title">Spread Analysis</div>
-                    <div class="dash-card-badge">Threshold: 0.05%</div>
-                </div>
+                <div class="dash-card-header"><div class="dash-card-title">Spread history</div><div class="dash-card-badge">threshold 0.05%</div></div>
                 <div class="chart-wrapper">
                     <svg class="chart-svg" id="chartSvg" viewBox="0 0 340 140" preserveAspectRatio="none">
-                        <defs>
-                            <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stop-color="rgba(6, 182, 212, 0.3)"/>
-                                <stop offset="100%" stop-color="rgba(6, 182, 212, 0)"/>
-                            </linearGradient>
-                        </defs>
+                        <defs><linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="rgba(6, 182, 212, 0.3)"/><stop offset="100%" stop-color="rgba(6, 182, 212, 0)"/></linearGradient></defs>
                         <line class="chart-threshold" id="thresholdLine" x1="0" x2="340"/>
                         <path class="chart-area" id="chartArea"/>
                         <path class="chart-line" id="chartLine"/>
@@ -666,57 +661,79 @@
             </div>
 
             <div class="dash-card">
-                <div class="dash-card-header">
-                    <div class="dash-card-title">Bot Statistics</div>
-                </div>
+                <div class="dash-card-header"><div class="dash-card-title">Bot stats</div></div>
                 <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-label">Total Trades</div>
-                        <div class="stat-value" id="tradeCount">0</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Net Profit</div>
-                        <div class="stat-value" id="totalProfit">$0.00</div>
-                    </div>
+                    <div class="stat-item"><div class="stat-label">Trades</div><div class="stat-value" id="tradeCount">0</div></div>
+                    <div class="stat-item"><div class="stat-label">Net profit</div><div class="stat-value" id="totalProfit">$0.00</div></div>
                 </div>
             </div>
         </div>
 
-        <!-- LOGS -->
         <div id="logs-panel"></div>
     </div>
 
     <script>
-        const ArbBot = (function() {
-            // Configuration
+        (function() {
+            // ----- configuration -----
             const CONFIG = {
-                threshold: 0.05,
-                tradeSize: 5000,
-                gasCost: 3.50,
-                tickInterval: 600,
-                volatility: 0.00025,
-                spikeProbability: 0.06,
+                tradeSize: 1000,            // 1,000 ZEPH
+                gasCost: 10.0,               // $20 gas/withdrawals
+                tickMs: 700,
+                mexcBase: 3.00,
+                evmPremium: 0.09,             // $3.09 when mexc=3.00
+                thresholdMultiplier: 2,        // gross profit must be >= 2*gasCost
                 chartPoints: 50,
-                chartMaxValue: 0.15
+                chartMax: 0.20                 // max spread % on chart
             };
 
-            // State
+            // ----- state -----
             const state = {
-                priceA: 1.00000,
-                priceB: 1.00000,
+                mexcPrice: 3.00,
+                evmPrice: 3.09,
                 spread: 0,
                 balance: 10000.00,
                 totalProfit: 0,
                 tradeCount: 0,
                 isTrading: false,
-                spreadHistory: [],
-                nodes: {}
+                thresholdMet: false,
+                fullActivationEnabled: false,
+                spreadHistory: []
             };
 
-            // DOM References
-            let elements = {};
+            // ----- DOM elements -----
+            const ui = {
+                statusIndicator: document.getElementById('statusIndicator'),
+                statusText: document.getElementById('statusText'),
+                balanceValue: document.getElementById('balanceValue'),
+                priceMexc: document.getElementById('priceMexc'),
+                priceEvm: document.getElementById('priceEvm'),
+                spreadDisplay: document.getElementById('spreadDisplay'),
+                buyDisplay: document.getElementById('buyDisplay'),
+                bridgeDisplay: document.getElementById('bridgeDisplay'),
+                sellDisplay: document.getElementById('sellDisplay'),
+                profitDisplay: document.getElementById('profitDisplay'),
+                tradeCount: document.getElementById('tradeCount'),
+                totalProfit: document.getElementById('totalProfit'),
+                chartLine: document.getElementById('chartLine'),
+                chartArea: document.getElementById('chartArea'),
+                thresholdLine: document.getElementById('thresholdLine'),
+                logsPanel: document.getElementById('logs-panel'),
+                wireSvg: document.getElementById('wireSvg'),
+                mexcAsk: document.getElementById('mexcAsk'),
+                grossProfit: document.getElementById('grossProfit'),
+                twiceFee: document.getElementById('twiceFee'),
+                thresholdBadge: document.getElementById('thresholdBadge'),
+                toggleBtn: document.getElementById('toggleBtn'),
+                nodes: {
+                    scan: document.getElementById('node-scan'),
+                    buy: document.getElementById('node-buy'),
+                    bridge: document.getElementById('node-bridge'),
+                    sell: document.getElementById('node-sell'),
+                    profit: document.getElementById('node-profit')
+                }
+            };
 
-            // Node connection definitions
+            // connections for wires
             const connections = [
                 { from: 'node-scan', to: 'node-buy' },
                 { from: 'node-buy', to: 'node-bridge' },
@@ -724,324 +741,214 @@
                 { from: 'node-sell', to: 'node-profit' }
             ];
 
-            // Initialize spread history
-            function initSpreadHistory() {
-                state.spreadHistory = new Array(CONFIG.chartPoints).fill(0);
-            }
+            // initialize spread history
+            state.spreadHistory = new Array(CONFIG.chartPoints).fill(0);
 
-            // DOM element caching
-            function cacheElements() {
-                elements = {
-                    statusIndicator: document.getElementById('statusIndicator'),
-                    statusText: document.getElementById('statusText'),
-                    balanceValue: document.getElementById('balanceValue'),
-                    priceA: document.getElementById('priceA'),
-                    priceB: document.getElementById('priceB'),
-                    spreadDisplay: document.getElementById('spreadDisplay'),
-                    buyDisplay: document.getElementById('buyDisplay'),
-                    bridgeDisplay: document.getElementById('bridgeDisplay'),
-                    sellDisplay: document.getElementById('sellDisplay'),
-                    profitDisplay: document.getElementById('profitDisplay'),
-                    tradeCount: document.getElementById('tradeCount'),
-                    totalProfit: document.getElementById('totalProfit'),
-                    chartLine: document.getElementById('chartLine'),
-                    chartArea: document.getElementById('chartArea'),
-                    thresholdLine: document.getElementById('thresholdLine'),
-                    logsPanel: document.getElementById('logs-panel'),
-                    wireSvg: document.getElementById('wireSvg'),
-                    workflowCanvas: document.getElementById('workflow-canvas')
-                };
-
-                // Cache nodes
-                state.nodes = {
-                    scan: document.getElementById('node-scan'),
-                    buy: document.getElementById('node-buy'),
-                    bridge: document.getElementById('node-bridge'),
-                    sell: document.getElementById('node-sell'),
-                    profit: document.getElementById('node-profit')
-                };
-            }
-
-            // Utility: Log entry
+            // ----- helpers -----
             function log(message, type = 'info') {
-                const time = new Date().toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit', 
-                    second: '2-digit',
-                    hour12: false 
-                });
-                
+                const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
                 const row = document.createElement('div');
                 row.className = 'log-row';
-                row.innerHTML = `
-                    <span class="log-time">${time}</span>
-                    <span class="log-type ${type}"></span>
-                    <span class="log-msg ${type}">${message}</span>
-                `;
-                
-                elements.logsPanel.appendChild(row);
-                
-                // Keep only last 30 logs
-                while (elements.logsPanel.children.length > 30) {
-                    elements.logsPanel.removeChild(elements.logsPanel.firstChild);
-                }
-                
-                // Auto-scroll
-                elements.logsPanel.scrollTop = elements.logsPanel.scrollHeight;
+                row.innerHTML = `<span class="log-time">${time}</span><span class="log-type ${type}"></span><span class="log-msg ${type}">${message}</span>`;
+                ui.logsPanel.appendChild(row);
+                while (ui.logsPanel.children.length > 30) ui.logsPanel.removeChild(ui.logsPanel.firstChild);
+                ui.logsPanel.scrollTop = ui.logsPanel.scrollHeight;
             }
 
-            // Draw wire connections between nodes
+            // draw wires
             function drawWires() {
-                const canvas = elements.workflowCanvas;
+                const canvas = document.getElementById('workflow-canvas');
                 const canvasRect = canvas.getBoundingClientRect();
-                
-                let pathsHTML = '';
+                let paths = '';
 
                 connections.forEach(conn => {
-                    const fromNode = document.getElementById(conn.from);
-                    const toNode = document.getElementById(conn.to);
-                    
-                    if (!fromNode || !toNode) return;
-
-                    const fromRect = fromNode.getBoundingClientRect();
-                    const toRect = toNode.getBoundingClientRect();
-
-                    // Calculate connection points (right edge of from, left edge of to)
+                    const fromEl = document.getElementById(conn.from);
+                    const toEl = document.getElementById(conn.to);
+                    if (!fromEl || !toEl) return;
+                    const fromRect = fromEl.getBoundingClientRect();
+                    const toRect = toEl.getBoundingClientRect();
                     const x1 = fromRect.right - canvasRect.left;
-                    const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
+                    const y1 = fromRect.top + fromRect.height/2 - canvasRect.top;
                     const x2 = toRect.left - canvasRect.left;
-                    const y2 = toRect.top + toRect.height / 2 - canvasRect.top;
-
-                    // Create curved path
-                    const midX = (x1 + x2) / 2;
+                    const y2 = toRect.top + toRect.height/2 - canvasRect.top;
                     const ctrlOffset = Math.min(100, Math.abs(x2 - x1) * 0.4);
-                    
                     const pathD = `M ${x1} ${y1} C ${x1 + ctrlOffset} ${y1}, ${x2 - ctrlOffset} ${y2}, ${x2} ${y2}`;
-
-                    // Store path for animation
-                    toNode.dataset.wirePath = pathD;
-                    toNode.dataset.wireFrom = conn.from;
-
-                    pathsHTML += `
-                        <path 
-                            class="wire-path" 
-                            id="wire-${conn.from}-${conn.to}"
-                            d="${pathD}"
-                        />
-                    `;
+                    toEl.dataset.wirePath = pathD;
+                    toEl.dataset.wireFrom = conn.from;
+                    paths += `<path class="wire-path" id="wire-${conn.from}-${conn.to}" d="${pathD}" />`;
                 });
-
-                elements.wireSvg.innerHTML = pathsHTML;
+                ui.wireSvg.innerHTML = paths;
             }
 
-            // Animate packet along wire
+            // packet animation
             function animatePacket(toNodeId, callback) {
                 const toNode = document.getElementById(toNodeId);
-                if (!toNode || !toNode.dataset.wirePath) {
-                    if (callback) callback();
-                    return;
-                }
-
-                const wireId = `wire-${toNode.dataset.wireFrom}-${toNodeId}`;
-                const wire = document.getElementById(wireId);
+                if (!toNode || !toNode.dataset.wirePath) { if(callback) callback(); return; }
+                const wire = document.getElementById(`wire-${toNode.dataset.wireFrom}-${toNodeId}`);
                 const pathD = toNode.dataset.wirePath;
-
-                // Create packet element
                 const packet = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                 packet.setAttribute('r', '5');
                 packet.setAttribute('class', 'wire-packet');
                 packet.style.offsetPath = `path('${pathD}')`;
                 packet.style.offsetDistance = '0%';
-                elements.wireSvg.appendChild(packet);
-
-                // Highlight wire
+                ui.wireSvg.appendChild(packet);
                 if (wire) wire.classList.add('active');
 
-                // Animate
-                let startTime = null;
-                const duration = 500;
-
-                function animate(timestamp) {
-                    if (!startTime) startTime = timestamp;
-                    const progress = Math.min((timestamp - startTime) / duration, 1);
-                    
-                    packet.style.offsetDistance = `${progress * 100}%`;
-
-                    if (progress < 1) {
-                        requestAnimationFrame(animate);
-                    } else {
+                let start = null;
+                const dur = 500;
+                function anim(ts) {
+                    if (!start) start = ts;
+                    const prog = Math.min((ts - start) / dur, 1);
+                    packet.style.offsetDistance = `${prog * 100}%`;
+                    if (prog < 1) requestAnimationFrame(anim);
+                    else {
                         packet.remove();
                         if (wire) wire.classList.remove('active');
                         if (callback) callback();
                     }
                 }
-
-                requestAnimationFrame(animate);
+                requestAnimationFrame(anim);
             }
 
-            // Update node visual state
             function setNodeState(nodeKey, stateClass) {
-                const node = state.nodes[nodeKey];
+                const node = ui.nodes[nodeKey];
                 if (!node) return;
-                
                 node.classList.remove('active', 'processing', 'success');
                 if (stateClass) node.classList.add(stateClass);
             }
 
-            // Reset all node states
             function resetNodes() {
-                Object.values(state.nodes).forEach(node => {
-                    node.classList.remove('active', 'processing', 'success');
-                });
+                Object.values(ui.nodes).forEach(n => n.classList.remove('active', 'processing', 'success'));
             }
 
-            // Update market simulation
+            // update market based on mexc slider (simulate)
             function updateMarket() {
                 if (state.isTrading) return;
 
-                // Random walk for both prices
-                const deltaA = (Math.random() - 0.5) * CONFIG.volatility;
-                const deltaB = (Math.random() - 0.5) * CONFIG.volatility;
+                // random walk on mexc price (±0.02)
+                const delta = (Math.random() - 0.5) * 0.04;
+                state.mexcPrice = Math.max(2.90, Math.min(3.20, state.mexcPrice + delta));
+                // evm implied = mexc + premium with small noise
+                const noise = (Math.random() - 0.5) * 0.02;
+                state.evmPrice = state.mexcPrice + 0.09 + noise;
+                // spread % = (evm - mexc) / mexc * 100
+                state.spread = ((state.evmPrice - state.mexcPrice) / state.mexcPrice) * 100;
 
-                // Occasional arbitrage opportunity spike
-                if (Math.random() < CONFIG.spikeProbability) {
-                    // Create opportunity by moving prices apart
-                    if (Math.random() > 0.5) {
-                        state.priceB += CONFIG.volatility * 4; // Sell price increases
-                    } else {
-                        state.priceA -= CONFIG.volatility * 4; // Buy price decreases
-                    }
+                // gross profit for 1000 ZEPH
+                const gross = CONFIG.tradeSize * (state.spread / 100);
+                state.thresholdMet = gross >= CONFIG.thresholdMultiplier * CONFIG.gasCost;
+
+                // update UI
+                ui.priceMexc.textContent = '$' + state.mexcPrice.toFixed(5);
+                ui.priceEvm.textContent = '$' + state.evmPrice.toFixed(5);
+                const spreadText = (state.spread >= 0 ? '+' : '') + state.spread.toFixed(3) + '%';
+                ui.spreadDisplay.textContent = spreadText;
+                ui.spreadDisplay.style.color = state.spread >= 0.05 ? 'var(--emerald)' : 'var(--text-bright)';
+                ui.mexcAsk.textContent = '$' + state.mexcPrice.toFixed(2);
+                const grossProfitVal = gross;
+                ui.grossProfit.textContent = '$' + grossProfitVal.toFixed(2);
+                ui.twiceFee.textContent = '$' + (CONFIG.thresholdMultiplier * CONFIG.gasCost).toFixed(2);
+
+                if (state.thresholdMet) {
+                    ui.thresholdBadge.textContent = '✅ threshold met (gross ≥ 2×fee)';
+                    ui.thresholdBadge.classList.add('met');
                 } else {
-                    state.priceA += deltaA;
-                    state.priceB += deltaB;
+                    ui.thresholdBadge.textContent = '⚡ threshold not met';
+                    ui.thresholdBadge.classList.remove('met');
                 }
 
-                // Mean reversion
-                state.priceA = 1.0 + (state.priceA - 1.0) * 0.98;
-                state.priceB = 1.0 + (state.priceB - 1.0) * 0.98;
-
-                // Bounds
-                state.priceA = Math.max(0.9990, Math.min(1.0010, state.priceA));
-                state.priceB = Math.max(0.9990, Math.min(1.0020, state.priceB));
-
-                // Calculate spread
-                state.spread = ((state.priceB - state.priceA) / state.priceA) * 100;
+                // update node-scan based on threshold (first step turns green)
+                if (state.thresholdMet && !state.isTrading && !state.fullActivationEnabled) {
+                    setNodeState('scan', 'success');
+                    ui.toggleBtn.classList.remove('disabled');
+                } else if (!state.thresholdMet && !state.isTrading) {
+                    setNodeState('scan', null);
+                    ui.toggleBtn.classList.add('disabled');
+                }
             }
 
-            // Update UI displays
-            function updateDisplays() {
-                elements.priceA.textContent = '$' + state.priceA.toFixed(5);
-                elements.priceB.textContent = '$' + state.priceB.toFixed(5);
-                
-                const spreadText = (state.spread >= 0 ? '+' : '') + state.spread.toFixed(3) + '%';
-                elements.spreadDisplay.textContent = spreadText;
-                elements.spreadDisplay.style.color = state.spread >= CONFIG.threshold ? 'var(--emerald)' : 'var(--text-bright)';
-
-                elements.balanceValue.textContent = '$' + state.balance.toFixed(2);
-                elements.tradeCount.textContent = state.tradeCount;
-                elements.totalProfit.textContent = '$' + state.totalProfit.toFixed(2);
-            }
-
-            // Update chart
+            // chart update
             function updateChart() {
                 state.spreadHistory.push(state.spread);
-                if (state.spreadHistory.length > CONFIG.chartPoints) {
-                    state.spreadHistory.shift();
-                }
+                if (state.spreadHistory.length > CONFIG.chartPoints) state.spreadHistory.shift();
 
-                const width = 340;
-                const height = 140;
-                const maxVal = CONFIG.chartMaxValue;
-                const padding = 5;
-
-                // Build path points
+                const w = 340, h = 140, pad = 5, maxVal = CONFIG.chartMax;
                 const points = state.spreadHistory.map((val, i) => {
-                    const x = (i / (CONFIG.chartPoints - 1)) * width;
-                    const y = height - padding - (Math.max(0, Math.min(val, maxVal)) / maxVal) * (height - padding * 2);
+                    const x = (i / (CONFIG.chartPoints-1)) * w;
+                    const y = h - pad - (Math.min(val, maxVal) / maxVal) * (h - pad*2);
                     return { x, y };
                 });
-
-                // Line path
-                const lineD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-                elements.chartLine.setAttribute('d', lineD);
-
-                // Area path
-                const areaD = lineD + ` L ${width} ${height} L 0 ${height} Z`;
-                elements.chartArea.setAttribute('d', areaD);
-
-                // Threshold line position
-                const thresholdY = height - padding - (CONFIG.threshold / maxVal) * (height - padding * 2);
-                elements.thresholdLine.setAttribute('y1', thresholdY);
-                elements.thresholdLine.setAttribute('y2', thresholdY);
+                const lineD = points.map((p, i) => `${i===0?'M':'L'} ${p.x} ${p.y}`).join(' ');
+                ui.chartLine.setAttribute('d', lineD);
+                const areaD = lineD + ` L ${w} ${h} L 0 ${h} Z`;
+                ui.chartArea.setAttribute('d', areaD);
+                const threshY = h - pad - (0.05 / maxVal) * (h - pad*2);
+                ui.thresholdLine.setAttribute('y1', threshY);
+                ui.thresholdLine.setAttribute('y2', threshY);
             }
 
-            // Execute trade sequence
-            function executeTrade() {
-                if (state.isTrading) return;
-
-                const grossProfit = CONFIG.tradeSize * (state.spread / 100);
-                if (state.spread < CONFIG.threshold || grossProfit <= CONFIG.gasCost) return;
-
+            // full trade execution (only when toggle activated)
+            function executeFullTrade() {
+                if (state.isTrading || !state.thresholdMet || !state.fullActivationEnabled) return;
                 state.isTrading = true;
+                state.fullActivationEnabled = false;
+                ui.toggleBtn.classList.remove('active');
+                ui.toggleBtn.classList.add('disabled');
+                ui.statusIndicator.classList.add('executing');
+                ui.statusText.textContent = 'EXECUTING';
 
-                // Update status
-                elements.statusIndicator.classList.add('executing');
-                elements.statusText.textContent = 'EXECUTING';
-
-                log(`Opportunity detected: ${state.spread.toFixed(3)}% spread`, 'warn');
+                const gross = CONFIG.tradeSize * (state.spread / 100);
+                log(`🔥 Full process activated · gross profit $${gross.toFixed(2)}`, 'warn');
                 resetNodes();
 
-                // Step 1: Scan
-                setNodeState('scan', 'active');
-
+                // step 1 (already green, set to processing then success)
+                setNodeState('scan', 'processing');
                 setTimeout(() => {
-                    // Step 2: Buy
+                    setNodeState('scan', 'success');
+                    // step 2 buy
                     setNodeState('buy', 'processing');
-                    elements.buyDisplay.textContent = CONFIG.tradeSize.toLocaleString() + ' DAI';
-                    
+                    ui.buyDisplay.textContent = '1,000 ZEPH';
                     animatePacket('node-buy', () => {
                         setNodeState('buy', 'success');
-                        log(`Bought ${CONFIG.tradeSize.toLocaleString()} DAI @ ${state.priceA.toFixed(5)}`, 'info');
-
+                        log(`Buy 1000 ZEPH @ $${state.mexcPrice.toFixed(2)} on MEXC`, 'info');
                         setTimeout(() => {
-                            // Step 3: Bridge
+                            // step 3 bridge
                             setNodeState('bridge', 'processing');
-                            elements.bridgeDisplay.textContent = CONFIG.tradeSize.toLocaleString() + ' DAI';
-
+                            ui.bridgeDisplay.textContent = '1,000 wZEPH';
                             animatePacket('node-bridge', () => {
                                 setNodeState('bridge', 'success');
-
                                 setTimeout(() => {
-                                    // Step 4: Sell
+                                    // step 4 sell
                                     setNodeState('sell', 'processing');
-                                    const sellAmount = CONFIG.tradeSize * (1 + state.spread / 100);
-                                    elements.sellDisplay.textContent = sellAmount.toFixed(2) + ' USDC';
-
+                                    const sellAmount = CONFIG.tradeSize * (1 + state.spread/100);
+                                    ui.sellDisplay.textContent = sellAmount.toFixed(2) + ' USDT';
                                     animatePacket('node-sell', () => {
                                         setNodeState('sell', 'success');
-
                                         setTimeout(() => {
-                                            // Step 5: Profit
+                                            // step 5 profit
                                             setNodeState('profit', 'processing');
-                                            const netProfit = grossProfit - CONFIG.gasCost;
-                                            
-                                            state.balance += netProfit;
-                                            state.totalProfit += netProfit;
+                                            const net = gross - CONFIG.gasCost;
+                                            state.balance += net;
+                                            state.totalProfit += net;
                                             state.tradeCount++;
-
-                                            elements.profitDisplay.textContent = '+$' + netProfit.toFixed(2);
-                                            elements.profitDisplay.style.color = 'var(--emerald)';
+                                            ui.profitDisplay.textContent = '+$' + net.toFixed(2);
+                                            ui.balanceValue.textContent = '$' + state.balance.toFixed(2);
+                                            ui.tradeCount.textContent = state.tradeCount;
+                                            ui.totalProfit.textContent = '$' + state.totalProfit.toFixed(2);
 
                                             animatePacket('node-profit', () => {
                                                 setNodeState('profit', 'success');
-                                                log(`Profit realized: $${netProfit.toFixed(2)} (after $${CONFIG.gasCost} gas)`, 'success');
-
-                                                // Reset after delay
+                                                log(`✅ Profit realized: $${net.toFixed(2)} (after $${CONFIG.gasCost} gas)`, 'success');
                                                 setTimeout(() => {
                                                     resetNodes();
                                                     state.isTrading = false;
-                                                    elements.statusIndicator.classList.remove('executing');
-                                                    elements.statusText.textContent = 'SCANNING';
+                                                    ui.statusIndicator.classList.remove('executing');
+                                                    ui.statusText.textContent = 'SCANNING';
+                                                    // re-check threshold for toggle
+                                                    if (state.thresholdMet) {
+                                                        setNodeState('scan', 'success');
+                                                        ui.toggleBtn.classList.remove('disabled');
+                                                    }
                                                 }, 800);
                                             });
                                         }, 300);
@@ -1053,48 +960,39 @@
                 }, 300);
             }
 
-            // Main tick
-            function tick() {
-                updateMarket();
-                updateDisplays();
-                updateChart();
+            // toggle click handler
+            ui.toggleBtn.addEventListener('click', () => {
+                if (state.isTrading || !state.thresholdMet) return;
+                state.fullActivationEnabled = !state.fullActivationEnabled;
+                if (state.fullActivationEnabled) {
+                    ui.toggleBtn.classList.add('active');
+                    ui.toggleBtn.textContent = '⏸ abort? (click again)';
+                } else {
+                    ui.toggleBtn.classList.remove('active');
+                    ui.toggleBtn.textContent = '▶ activate full process';
+                }
+                // if active and user clicks again, we start execution
+                if (state.fullActivationEnabled) {
+                    executeFullTrade();
+                }
+            });
 
-                if (!state.isTrading && state.spread >= CONFIG.threshold) {
-                    const grossProfit = CONFIG.tradeSize * (state.spread / 100);
-                    if (grossProfit > CONFIG.gasCost) {
-                        executeTrade();
-                    }
+            // main tick
+            function tick() {
+                if (!state.isTrading) {
+                    updateMarket();
+                    updateChart();
                 }
             }
 
-            // Initialize
-            function init() {
-                initSpreadHistory();
-                cacheElements();
+            // init
+            window.addEventListener('load', () => {
                 drawWires();
-
-                // Redraw wires on resize
-                let resizeTimeout = null;
-                window.addEventListener('resize', () => {
-                    clearTimeout(resizeTimeout);
-                    resizeTimeout = setTimeout(drawWires, 100);
-                });
-
-                log('Arbitrage bot initialized', 'info');
-                log(`Threshold: ${CONFIG.threshold}% | Trade size: $${CONFIG.tradeSize.toLocaleString()}`, 'info');
-
-                // Start main loop
-                setInterval(tick, CONFIG.tickInterval);
-            }
-
-            // Run on load
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', init);
-            } else {
-                init();
-            }
-
-            return { state, CONFIG };
+                window.addEventListener('resize', () => setTimeout(drawWires, 100));
+                log('Arbitrage bot · MEXC conditional', 'info');
+                log('Threshold: gross profit ≥ fee+$10 = $30', 'info');
+                setInterval(tick, CONFIG.tickMs);
+            });
         })();
     </script>
 </body>
