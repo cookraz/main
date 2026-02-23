@@ -3,24 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arbitrage · MEXC Auto-Workflow</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>ARB BOT · Blackhole Canvas Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-void: #06080d;
-            --bg-deep: #0b0f18;
-            --bg-surface: #111827;
-            --bg-panel: #1a2234;
-            --border-dim: #2a3444;
-            --text-bright: #f1f5f9;
-            --text-muted: #7a8ba3;
-            --cyan: #06b6d4;
-            --emerald: #10b981;
-            --amber: #f59e0b;
-            --rose: #f43f5e;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-void: #04060a;
+            --bg-deep: #080c14;
+            --bg-surface: #0d1219;
+            --bg-panel: #121a24;
+            --bg-card: #162031;
+            --bg-elevated: #1a2838;
+            --border-dim: #1e2d3d;
+            --border-mid: #2a3f52;
+            --text-bright: #e8f0f8;
+            --text-mid: #8a9db0;
+            --text-dim: #4a5f75;
+            --cyan: #00d4aa;
+            --cyan-glow: rgba(0, 212, 170, 0.35);
+            --orange: #ff6b35;
+            --orange-glow: rgba(255, 107, 53, 0.35);
+            --blue: #3b82f6;
+            --blue-glow: rgba(59, 130, 246, 0.35);
+            --amber: #fbbf24;
+            --rose: #f43f5e;
+            --wire-idle: #1e3a4d;
+            --wire-active: #00d4aa;
+        }
 
         body {
             font-family: 'Space Grotesk', sans-serif;
@@ -28,34 +42,53 @@
             color: var(--text-bright);
             height: 100vh;
             overflow: hidden;
-            display: grid;
-            grid-template-columns: 1fr 360px;
-            grid-template-rows: 64px 1fr 160px;
         }
 
-        /* --- Ambient Background --- */
-        .ambient-bg {
+        /* Ambient background */
+        .ambient-layer {
             position: fixed;
             inset: 0;
             pointer-events: none;
             z-index: 0;
-            background: 
-                radial-gradient(ellipse 800px 600px at 20% 30%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse 600px 500px at 80% 70%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
-        }
-        .grid-overlay {
-            position: fixed;
-            inset: 0;
-            background-image: 
-                linear-gradient(rgba(6, 182, 212, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(6, 182, 212, 0.03) 1px, transparent 1px);
-            background-size: 60px 60px;
-            mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 70%);
-            z-index: 0;
         }
 
-        /* --- Layout --- */
-        header {
+        .ambient-layer::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse 1000px 800px at 15% 20%, rgba(0, 212, 170, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse 800px 600px at 85% 80%, rgba(255, 107, 53, 0.05) 0%, transparent 50%);
+            animation: ambientShift 40s ease-in-out infinite;
+        }
+
+        @keyframes ambientShift {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        .grid-pattern {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(0, 212, 170, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 170, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(ellipse 90% 90% at 50% 50%, black 30%, transparent 80%);
+        }
+
+        /* Main layout */
+        .app-layout {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            grid-template-rows: 56px 1fr;
+            height: 100vh;
+        }
+
+        /* Header */
+        .app-header {
             grid-column: 1 / -1;
             display: flex;
             align-items: center;
@@ -63,642 +96,1321 @@
             padding: 0 24px;
             background: linear-gradient(180deg, var(--bg-deep) 0%, transparent 100%);
             border-bottom: 1px solid var(--border-dim);
-            z-index: 10;
         }
 
-        #workflow-canvas {
-            position: relative;
-            z-index: 1;
-            overflow: hidden;
-        }
-
-        #dashboard {
-            background: var(--bg-deep);
-            border-left: 1px solid var(--border-dim);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            z-index: 10;
-            overflow-y: auto;
-        }
-
-        #logs-panel {
-            grid-column: 1 / 2;
-            background: var(--bg-deep);
-            border-top: 1px solid var(--border-dim);
-            padding: 12px 24px;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.75rem;
-            z-index: 10;
-            overflow-y: auto;
-        }
-
-        /* --- Header Components --- */
-        .logo-group {
+        .logo-section {
             display: flex;
             align-items: center;
             gap: 12px;
         }
-        .logo-icon {
-            width: 38px;
-            height: 38px;
-            background: linear-gradient(135deg, var(--cyan), #8b5cf6);
+
+        .logo-mark {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--cyan) 0%, var(--orange) 100%);
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+            box-shadow: 0 0 20px var(--cyan-glow);
         }
-        .logo-icon svg { width: 22px; height: 22px; stroke: white; fill: none; stroke-width: 2; }
-        
+
+        .logo-mark svg {
+            width: 20px;
+            height: 20px;
+            stroke: white;
+            fill: none;
+            stroke-width: 2.5;
+        }
+
+        .logo-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-text span {
+            color: var(--text-dim);
+            font-weight: 400;
+        }
+
+        .header-stats {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .stat-badge .label {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-badge .value {
+            color: var(--cyan);
+            font-weight: 600;
+        }
+
         .status-pill {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 6px 14px;
+            padding: 8px 16px;
+            background: rgba(0, 212, 170, 0.1);
+            border: 1px solid rgba(0, 212, 170, 0.25);
             border-radius: 100px;
             font-size: 0.8rem;
             font-weight: 600;
-            transition: all 0.3s;
         }
-        .status-pill.idle { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--emerald); }
-        .status-pill.running { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); color: var(--amber); }
-        
+
+        .status-pill.active {
+            background: rgba(0, 212, 170, 0.15);
+            animation: statusGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes statusGlow {
+            0%, 100% { box-shadow: 0 0 10px var(--cyan-glow); }
+            50% { box-shadow: 0 0 20px var(--cyan-glow); }
+        }
+
         .status-dot {
-            width: 8px; height: 8px;
+            width: 8px;
+            height: 8px;
+            background: var(--cyan);
             border-radius: 50%;
-            background: currentColor;
-            animation: pulse 2s infinite;
+            animation: dotPulse 1.5s ease-in-out infinite;
         }
-        .status-pill.running .status-dot { animation: pulse 0.6s infinite; }
 
-        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+        @keyframes dotPulse {
+            0%, 100% { opacity: 0.5; transform: scale(0.85); }
+            50% { opacity: 1; transform: scale(1.15); }
+        }
 
-        /* --- Control Strip --- */
-        .control-strip {
-            position: absolute;
-            top: 80px;
-            left: 24px;
-            z-index: 20;
-            background: rgba(26, 34, 52, 0.9);
-            border: 1px solid var(--border-dim);
-            border-radius: 16px;
-            padding: 16px 24px;
+        /* Module Palette */
+        .module-palette {
+            background: var(--bg-deep);
+            border-right: 1px solid var(--border-dim);
+            padding: 16px;
             display: flex;
-            align-items: center;
-            gap: 32px;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
         }
 
-        .ctrl-item { display: flex; flex-direction: column; gap: 4px; }
-        .ctrl-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        .ctrl-value { font-family: 'IBM Plex Mono', monospace; font-size: 1.1rem; font-weight: 600; color: var(--cyan); }
-        
-        .threshold-badge {
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-size: 0.8rem;
+        .palette-header {
+            font-size: 0.7rem;
             font-weight: 600;
-            background: rgba(122, 139, 163, 0.1);
-            color: var(--text-muted);
-            transition: all 0.3s;
-        }
-        .threshold-badge.active {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--emerald);
-            box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-dim);
+            margin-bottom: 4px;
         }
 
-        .master-switch {
+        .module-item {
             display: flex;
             align-items: center;
             gap: 12px;
-            cursor: pointer;
+            padding: 12px 14px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-dim);
+            border-radius: 10px;
+            cursor: grab;
+            transition: all 0.2s ease;
             user-select: none;
         }
-        .switch-track {
-            width: 44px; height: 24px;
-            background: var(--bg-surface);
-            border-radius: 12px;
-            border: 1px solid var(--border-dim);
-            position: relative;
-            transition: all 0.3s;
-        }
-        .switch-thumb {
-            position: absolute;
-            top: 2px; left: 2px;
-            width: 18px; height: 18px;
-            background: var(--text-muted);
-            border-radius: 50%;
-            transition: all 0.3s;
-        }
-        .master-switch.active .switch-track { background: var(--emerald); border-color: var(--emerald); }
-        .master-switch.active .switch-thumb { left: 22px; background: white; }
-        .switch-label { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); }
-        .master-switch.active .switch-label { color: var(--emerald); }
 
-        /* --- Nodes & Canvas --- */
-        .wire-svg {
+        .module-item:hover {
+            background: var(--bg-card);
+            border-color: var(--border-mid);
+            transform: translateX(4px);
+        }
+
+        .module-item:active {
+            cursor: grabbing;
+            transform: scale(0.98);
+        }
+
+        .module-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .module-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: white;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .module-icon.scan { background: linear-gradient(135deg, #00d4aa, #00a388); }
+        .module-icon.buy { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .module-icon.bridge { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .module-icon.sell { background: linear-gradient(135deg, #ff6b35, #e85d2d); }
+        .module-icon.condition { background: linear-gradient(135deg, #fbbf24, #d4a017); }
+        .module-icon.delay { background: linear-gradient(135deg, #64748b, #475569); }
+        .module-icon.profit { background: linear-gradient(135deg, #10b981, #059669); }
+        .module-icon.alert { background: linear-gradient(135deg, #f43f5e, #dc2626); }
+
+        .module-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .module-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .module-desc {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Canvas Area */
+        .canvas-area {
+            position: relative;
+            background: transparent;
+            overflow: hidden;
+        }
+
+        .canvas-grid {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                radial-gradient(circle at center, rgba(0, 212, 170, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* SVG Wires Layer */
+        .wires-layer {
             position: absolute;
             inset: 0;
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 1;
+            z-index: 5;
         }
+
         .wire-path {
             fill: none;
-            stroke: rgba(6, 182, 212, 0.2);
-            stroke-width: 2;
-            transition: stroke 0.4s;
+            stroke: var(--wire-idle);
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            transition: stroke 0.3s ease;
         }
-        .wire-path.active { stroke: var(--cyan); filter: drop-shadow(0 0 6px var(--cyan)); }
+
+        .wire-path.active {
+            stroke: var(--wire-active);
+            filter: drop-shadow(0 0 8px var(--cyan-glow));
+        }
+
         .wire-packet {
             fill: var(--cyan);
-            filter: drop-shadow(0 0 8px var(--cyan));
-            opacity: 0;
+            filter: drop-shadow(0 0 10px var(--cyan));
         }
-        .wire-packet.active { opacity: 1; }
 
-        .node-card {
+        /* Canvas Nodes */
+        .canvas-node {
             position: absolute;
-            width: 200px;
-            background: var(--bg-panel);
+            min-width: 200px;
+            background: var(--bg-card);
             border: 1px solid var(--border-dim);
-            border-radius: 16px;
-            padding: 18px;
+            border-radius: 14px;
+            padding: 0;
             z-index: 10;
-            transition: all 0.3s ease;
-            overflow: hidden;
+            cursor: move;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+            user-select: none;
         }
-        .node-card::before {
+
+        .canvas-node:hover {
+            border-color: var(--border-mid);
+        }
+
+        .canvas-node.selected {
+            border-color: var(--cyan);
+            box-shadow: 0 0 30px -8px var(--cyan-glow);
+        }
+
+        .canvas-node.processing {
+            border-color: var(--amber);
+            box-shadow: 0 0 30px -8px rgba(251, 191, 36, 0.35);
+        }
+
+        .canvas-node.success {
+            border-color: var(--cyan);
+            box-shadow: 0 0 30px -8px var(--cyan-glow);
+        }
+
+        .canvas-node.error {
+            border-color: var(--rose);
+            box-shadow: 0 0 30px -8px rgba(244, 63, 94, 0.35);
+        }
+
+        .node-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            background: var(--bg-panel);
+            border-radius: 13px 13px 0 0;
+            border-bottom: 1px solid var(--border-dim);
+        }
+
+        .node-top-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .node-type-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .node-type-icon svg {
+            width: 14px;
+            height: 14px;
+            stroke: white;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .node-type-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-mid);
+        }
+
+        .node-delete-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .node-delete-btn svg {
+            width: 14px;
+            height: 14px;
+            stroke: var(--text-dim);
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .node-delete-btn:hover {
+            background: rgba(244, 63, 94, 0.15);
+        }
+
+        .node-delete-btn:hover svg {
+            stroke: var(--rose);
+        }
+
+        .node-body {
+            padding: 14px;
+        }
+
+        .node-main-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-bright);
+        }
+
+        .canvas-node.success .node-main-value {
+            color: var(--cyan);
+        }
+
+        .node-sub-text {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .node-config {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-dim);
+        }
+
+        .config-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .config-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .config-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .config-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-mid);
+        }
+
+        /* Node Ports */
+        .node-ports {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--bg-surface);
+            border-radius: 0 0 13px 13px;
+            border-top: 1px solid var(--border-dim);
+        }
+
+        .port-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .port {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--bg-elevated);
+            border: 2px solid var(--border-mid);
+            cursor: crosshair;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .port:hover {
+            border-color: var(--cyan);
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .port.connected {
+            background: var(--cyan);
+            border-color: var(--cyan);
+        }
+
+        .port.input::before,
+        .port.output::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0; height: 2px;
-            background: var(--border-dim);
-            transition: background 0.3s;
+            width: 30px;
+            height: 30px;
+            top: 50%;
+            transform: translateY(-50%);
         }
-        .node-card.active::before { background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
-        .node-card.success::before { background: var(--emerald); box-shadow: 0 0 12px var(--emerald); }
-        .node-card.success { border-color: rgba(16, 185, 129, 0.3); }
 
-        .node-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.08em; margin-bottom: 10px; display: flex; justify-content: space-between;}
-        .node-value { font-family: 'IBM Plex Mono', monospace; font-size: 1.4rem; font-weight: 700; color: var(--text-bright); margin-bottom: 4px; transition: color 0.3s; }
-        .node-card.success .node-value { color: var(--emerald); }
-        .node-sub { font-size: 0.75rem; color: var(--text-muted); }
+        .port.input::before {
+            right: 100%;
+        }
 
-        /* --- Dashboard --- */
-        .dash-card {
+        .port.output::before {
+            left: 100%;
+        }
+
+        /* Drop zone indicator */
+        .drop-indicator {
+            position: absolute;
+            inset: 0;
+            border: 2px dashed var(--cyan);
+            border-radius: 0;
+            background: rgba(0, 212, 170, 0.05);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 100;
+        }
+
+        .drop-indicator.active {
+            opacity: 1;
+        }
+
+        /* Toolbar */
+        .canvas-toolbar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
             background: var(--bg-panel);
             border: 1px solid var(--border-dim);
             border-radius: 12px;
-            padding: 16px;
+            z-index: 50;
+            backdrop-filter: blur(10px);
         }
-        .dash-header { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .stat-box { background: var(--bg-surface); padding: 12px; border-radius: 8px; text-align: center; }
-        .stat-label { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 4px; }
-        .stat-val { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--cyan); }
-        .stat-val.profit { color: var(--emerald); }
 
-        /* --- Logs --- */
-        .log-entry { display: flex; gap: 12px; padding: 4px 0; border-bottom: 1px solid rgba(42, 52, 68, 0.3); }
-        .log-time { color: var(--text-muted); opacity: 0.6; }
-        .log-msg { color: var(--text-muted); }
-        .log-msg.success { color: var(--emerald); }
-        .log-msg.warn { color: var(--amber); }
+        .toolbar-btn {
+            padding: 8px 14px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            color: var(--text-mid);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
+        .toolbar-btn:hover {
+            background: var(--bg-elevated);
+            border-color: var(--border-mid);
+            color: var(--text-bright);
+        }
+
+        .toolbar-btn.primary {
+            background: var(--cyan);
+            border-color: var(--cyan);
+            color: var(--bg-void);
+        }
+
+        .toolbar-btn.primary:hover {
+            filter: brightness(1.1);
+        }
+
+        .toolbar-btn.danger {
+            color: var(--rose);
+        }
+
+        .toolbar-btn.danger:hover {
+            background: rgba(244, 63, 94, 0.1);
+            border-color: var(--rose);
+        }
+
+        .toolbar-btn svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .toolbar-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--border-dim);
+        }
+
+        /* Connection drawing mode */
+        .connection-mode .port {
+            animation: portPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes portPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* Temp wire while connecting */
+        .temp-wire {
+            stroke: var(--cyan);
+            stroke-width: 2;
+            stroke-dasharray: 8 4;
+            fill: none;
+            opacity: 0.7;
+        }
+
+        /* Info tooltip */
+        .tooltip {
+            position: fixed;
+            padding: 8px 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-mid);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: var(--text-mid);
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="ambient-bg"></div>
-    <div class="grid-overlay"></div>
+    <div class="ambient-layer"><div class="grid-pattern"></div></div>
 
-    <header>
-        <div class="logo-group">
-            <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
-            <div style="font-size: 1.2rem; font-weight: 700;">MEXC Arb <span style="font-weight: 400; opacity: 0.6; margin-left: 8px;">Auto-Execution Engine</span></div>
-        </div>
-        <div class="status-pill idle" id="statusPill">
-            <div class="status-dot"></div>
-            <span id="statusText">MONITORING</span>
-        </div>
-    </header>
+    <div class="app-layout">
+        <header class="app-header">
+            <div class="logo-section">
+                <div class="logo-mark">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/><path d="m4.93 4.93 2.83 2.83m8.48 8.48 2.83 2.83m0-14.14-2.83 2.83m-8.48 8.48-2.83 2.83"/></svg>
+                </div>
+                <div class="logo-text">ARB BOT <span>/ Blackhole Engine</span></div>
+            </div>
+            <div class="header-stats">
+                <div class="stat-badge">
+                    <span class="label">Nodes</span>
+                    <span class="value" id="nodeCount">0</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="label">Connections</span>
+                    <span class="value" id="connectionCount">0</span>
+                </div>
+                <div class="status-pill" id="statusPill">
+                    <div class="status-dot"></div>
+                    <span id="statusText">READY</span>
+                </div>
+            </div>
+        </header>
 
-    <div id="workflow-canvas">
-        <!-- Floating Control Strip -->
-        <div class="control-strip">
-            <div class="ctrl-item">
-                <span class="ctrl-label">MEXC Ask</span>
-                <span class="ctrl-value" id="dispPrice">$3.00</span>
-            </div>
-            <div class="ctrl-item">
-                <span class="ctrl-label">Net Spread</span>
-                <span class="ctrl-value" id="dispSpread">0.00%</span>
-            </div>
-            <div class="ctrl-item">
-                <span class="ctrl-label">Gross Profit</span>
-                <span class="ctrl-value" id="dispGross">$0.00</span>
-            </div>
+        <aside class="module-palette">
+            <div class="palette-header">Input / Triggers</div>
             
-            <div class="threshold-badge" id="threshBadge">Requires ≥ $20.00</div>
-
-            <!-- Master Switch for Auto-Trade -->
-            <div class="master-switch active" id="autoSwitch">
-                <div class="switch-track"><div class="switch-thumb"></div></div>
-                <div class="switch-label">Auto-Trade</div>
+            <div class="module-item" draggable="true" data-type="scan">
+                <div class="module-icon scan">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                </div>
+                <div class="module-info">
+                    <div class="module-name">Market Scanner</div>
+                    <div class="module-desc">Scan exchange prices</div>
+                </div>
             </div>
-        </div>
 
-        <svg class="wire-svg" id="wireSvg"></svg>
+            <div class="module-item" draggable="true" data-type="condition">
+                <div class="module-icon condition">
+                    <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></svg>
+                </div>
+                <div class="module-info">
+                    <div class="module-name">Condition Gate</div>
+                    <div class="module-desc">Threshold check</div>
+                </div>
+            </div>
 
-        <!-- Workflow Nodes -->
-        <div class="node-card" id="node-1" style="left: 40px; top: 200px;">
-            <div class="node-title">1. Market Scan</div>
-            <div class="node-value" id="val-1">WAITING</div>
-            <div class="node-sub">Scanning for spread...</div>
-        </div>
+            <div class="palette-header">Actions</div>
 
-        <div class="node-card" id="node-2" style="left: 300px; top: 120px;">
-            <div class="node-title">2. Buy MEXC</div>
-            <div class="node-value" id="val-2">---</div>
-            <div class="node-sub">1,000 ZEPH</div>
-        </div>
+            <div class="module-item" draggable="true" data-type="buy">
+                <div class="module-icon buy">
+                    <svg viewBox="0 0 24 24"><path d="M12 2v20M17 7l-5-5-5 5"/></svg>
+                </div>
+                <div class="module-info">
+                    <div class="module-name">Buy Order</div>
+                    <div class="module-desc">Execute buy on MEXC</div>
+                </div>
+            </div>
 
-        <div class="node-card" id="node-3" style="left: 560px; top: 240px;">
-            <div class="node-title">3. Bridge</div>
-            <div class="node-value" id="val-3">---</div>
-            <div class="node-sub">Wrap to wZEPH</div>
-        </div>
+            <div class="module-item" draggable="true" data-type="bridge">
+                <div class="module-icon bridge">
+                    <svg viewBox="0 0 24 24"><path d="M8 7h8M8 17h8M6 7l-2 5 2 5M18 7l2 5-2 5"/></svg>
+                </div>
+                <div class="module-info">
+                    <div class="module-name">Bridge / Wrap</div>
+                    <div class="module-desc">Cross-chain transfer</div>
+                </div>
+            </div>
 
-        <div class="node-card" id="node-4" style="left: 820px; top: 140px;">
-            <div class="node-title">4. Swap & Sell</div>
-            <div class="node-value" id="val-4">---</div>
-            <div class="node-sub">wZEPH → USDT</div>
-        </div>
+            <div class="module-item" draggable="true" data-type="sell">
+                <div class="module-icon sell">
+                    <svg viewBox="0 0 24 24"><path d="M12 22V2M7 17l5 5 5-5"/></svg>
+                </div>
+                <div class="module-info">
+                    <div class="module-name">Sell Order</div>
+                    <div class="module-desc">Execute sell on DEX</div>
+                </div>
+            </div>
 
-        <div class="node-card" id="node-5" style="left: 1060px; top: 260px;">
-            <div class="node-title">5. P&L</div>
-            <div class="node-value" id="val-5">$0.00</div>
-            <div class="node-sub">Net Realized</div>
-        </div>
+            <div class="palette-header">Utilities</div>
+
+            <div class="module-item" draggable="true" data-type="delay">
+                <div class="module-icon delay">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                </div>
+                <div class="module-info">
+                    <div class="module-name">Delay</div>
+                    <div class="module-desc">Wait before next step</div>
+                </div>
+            </div>
+
+            <div class="module-item" draggable="true" data-type="profit">
+                <div class="module-icon profit">
+                    <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                </div>
+                <div class="module-info">
+                    <div class="module-name">Profit Calculator</div>
+                    <div class="module-desc">Calculate P&L</div>
+                </div>
+            </div>
+
+            <div class="module-item" draggable="true" data-type="alert">
+                <div class="module-icon alert">
+                    <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                </div>
+                <div class="module-info">
+                    <div class="module-name">Alert / Notify</div>
+                    <div class="module-desc">Send notification</div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="canvas-area" id="canvasArea">
+            <div class="canvas-grid"></div>
+            <div class="drop-indicator" id="dropIndicator"></div>
+            <svg class="wires-layer" id="wiresLayer"></svg>
+
+            <div class="canvas-toolbar">
+                <button class="toolbar-btn" id="clearAllBtn">
+                    <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/></svg>
+                    Clear All
+                </button>
+                <div class="toolbar-divider"></div>
+                <button class="toolbar-btn" id="runBtn">
+                    <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+                    Run Flow
+                </button>
+                <button class="toolbar-btn primary" id="autoLayoutBtn">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    Auto Layout
+                </button>
+            </div>
+        </main>
     </div>
 
-    <div id="dashboard">
-        <div class="dash-card">
-            <div class="dash-header">Bot Statistics</div>
-            <div class="stat-grid">
-                <div class="stat-box">
-                    <div class="stat-label">Total Trades</div>
-                    <div class="stat-val" id="statTrades">0</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">Net Profit</div>
-                    <div class="stat-val profit" id="statProfit">$0.00</div>
-                </div>
-            </div>
-        </div>
-        <div class="dash-card">
-            <div class="dash-header">Simulation Config</div>
-            <div class="stat-grid">
-                <div class="stat-box">
-                    <div class="stat-label">Gas Fee</div>
-                    <div class="stat-val">$10.00</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">Threshold (2x)</div>
-                    <div class="stat-val">$20.00</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="logs-panel"></div>
+    <div class="tooltip" id="tooltip"></div>
 
     <script>
-    (function() {
-        // --- Configuration & State Security ---
-        const CONFIG = Object.freeze({
-            TRADE_SIZE: 1000,       // ZEPH
-            GAS_COST: 10.0,         // $10 fixed fee per trade cycle
-            THRESHOLD_MULT: 2,      // 2 * GAS_COST = $20 min profit
-            TICK_RATE: 600,         // ms
-            VOLATILITY: 0.015       // Price volatility simulation
-        });
+        (function() {
+            // ===== BLACKHOLE CANVAS ENGINE =====
+            const BlackholeEngine = {
+                nodes: new Map(),
+                connections: [],
+                nodeIdCounter: 0,
+                selectedNode: null,
+                draggingNode: null,
+                dragOffset: { x: 0, y: 0 },
+                connectingFrom: null,
+                tempWire: null,
 
-        const state = {
-            price: 3.00,
-            balance: 10000.00,
-            tradeCount: 0,
-            totalProfit: 0,
-            isLocked: false,        // Mutex for trade execution
-            autoEnabled: true       // Master switch state
-        };
-
-        // --- DOM References ---
-        const DOM = {
-            statusPill: document.getElementById('statusPill'),
-            statusText: document.getElementById('statusText'),
-            dispPrice: document.getElementById('dispPrice'),
-            dispSpread: document.getElementById('dispSpread'),
-            dispGross: document.getElementById('dispGross'),
-            threshBadge: document.getElementById('threshBadge'),
-            autoSwitch: document.getElementById('autoSwitch'),
-            wireSvg: document.getElementById('wireSvg'),
-            logs: document.getElementById('logs-panel'),
-            statTrades: document.getElementById('statTrades'),
-            statProfit: document.getElementById('statProfit'),
-            nodes: [
-                { el: document.getElementById('node-1'), val: document.getElementById('val-1') },
-                { el: document.getElementById('node-2'), val: document.getElementById('val-2') },
-                { el: document.getElementById('node-3'), val: document.getElementById('val-3') },
-                { el: document.getElementById('node-4'), val: document.getElementById('val-4') },
-                { el: document.getElementById('node-5'), val: document.getElementById('val-5') }
-            ]
-        };
-
-        // --- Utility Functions ---
-        const log = (msg, type = 'info') => {
-            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            entry.innerHTML = `<span class="log-time">${time}</span><span class="log-msg ${type}">${msg}</span>`;
-            DOM.logs.prepend(entry);
-            // Keep log clean
-            if (DOM.logs.children.length > 20) DOM.logs.lastChild.remove();
-        };
-
-        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-        const formatMoney = (val) => `$${val.toFixed(2)}`;
-        const formatPct = (val) => `${(val * 100).toFixed(3)}%`;
-
-        // --- Wire Drawing ---
-        const wires = [
-            { from: '#node-1', to: '#node-2' },
-            { from: '#node-2', to: '#node-3' },
-            { from: '#node-3', to: '#node-4' },
-            { from: '#node-4', to: '#node-5' }
-        ];
-
-        function drawWires() {
-            DOM.wireSvg.innerHTML = '';
-            const ns = 'http://www.w3.org/2000/svg';
-            
-            wires.forEach((w, idx) => {
-                const fromEl = document.querySelector(w.from);
-                const toEl = document.querySelector(w.to);
-                if(!fromEl || !toEl) return;
-
-                const fRect = fromEl.getBoundingClientRect();
-                const tRect = toEl.getBoundingClientRect();
-                const canvasRect = document.getElementById('workflow-canvas').getBoundingClientRect();
-
-                // Start point: right-center of from
-                const x1 = fRect.right - canvasRect.left;
-                const y1 = fRect.top + fRect.height/2 - canvasRect.top;
-                
-                // End point: left-center of to
-                const x2 = tRect.left - canvasRect.left;
-                const y2 = tRect.top + tRect.height/2 - canvasRect.top;
-
-                // Bezier control points
-                const cp = Math.abs(x2 - x1) * 0.5;
-                const d = `M ${x1} ${y1} C ${x1+cp} ${y1}, ${x2-cp} ${y2}, ${x2} ${y2}`;
-
-                // Path
-                const path = document.createElementNS(ns, 'path');
-                path.setAttribute('d', d);
-                path.setAttribute('class', 'wire-path');
-                path.id = `wire-${idx}`;
-                DOM.wireSvg.appendChild(path);
-
-                // Packet (circle)
-                const circle = document.createElementNS(ns, 'circle');
-                circle.setAttribute('r', '4');
-                circle.setAttribute('class', 'wire-packet');
-                circle.id = `pkt-${idx}`;
-                circle.style.offsetPath = `path('${d}')`;
-                DOM.wireSvg.appendChild(circle);
-            });
-        }
-
-        // --- Core Logic ---
-
-        // Calculate Market State
-        function scanMarket() {
-            // Random walk for price simulation
-            const delta = (Math.random() - 0.5) * CONFIG.VOLATILITY;
-            state.price = Math.max(2.5, Math.min(3.5, state.price + delta));
-            
-            // Simulate EVM premium (randomly fluctuates)
-            const evmPremium = 0.005 + (Math.random() * 0.04); 
-            const spread = evmPremium; // Spread in decimal (e.g., 0.03 = 3%)
-            
-            // Calculate Gross Profit
-            // Gross = Size * Spread. 
-            // Note: We treat spread as direct profit per unit.
-            const grossProfit = CONFIG.TRADE_SIZE * spread;
-            
-            return {
-                price: state.price,
-                spread: spread,
-                grossProfit: grossProfit,
-                thresholdMet: grossProfit >= (CONFIG.GAS_COST * CONFIG.THRESHOLD_MULT)
-            };
-        }
-
-        function updateUI(market) {
-            DOM.dispPrice.textContent = `$${market.price.toFixed(4)}`;
-            DOM.dispSpread.textContent = formatPct(market.spread);
-            DOM.dispGross.textContent = formatMoney(market.grossProfit);
-            DOM.dispGross.style.color = market.thresholdMet ? 'var(--emerald)' : 'var(--cyan)';
-
-            // Threshold Badge
-            if (market.thresholdMet) {
-                DOM.threshBadge.textContent = 'THRESHOLD MET';
-                DOM.threshBadge.classList.add('active');
-            } else {
-                DOM.threshBadge.textContent = `Requires ≥ $${(CONFIG.GAS_COST * CONFIG.THRESHOLD_MULT).toFixed(2)}`;
-                DOM.threshBadge.classList.remove('active');
-            }
-
-            // Node 1 state
-            if (market.thresholdMet) {
-                DOM.nodes[0].el.classList.add('success');
-                DOM.nodes[0].val.textContent = 'READY';
-            } else {
-                DOM.nodes[0].el.classList.remove('success');
-                DOM.nodes[0].val.textContent = 'SCANNING';
-            }
-        }
-
-        function setStatus(isRunning) {
-            DOM.statusPill.className = `status-pill ${isRunning ? 'running' : 'idle'}`;
-            DOM.statusText.textContent = isRunning ? 'EXECUTING' : 'MONITORING';
-        }
-
-        // Animation helper
-        async function animateWire(wireIndex) {
-            const wire = document.getElementById(`wire-${wireIndex}`);
-            const pkt = document.getElementById(`pkt-${wireIndex}`);
-            
-            if(!wire || !pkt) return;
-
-            wire.classList.add('active');
-            pkt.classList.add('active');
-            
-            // Animate packet
-            let progress = 0;
-            const duration = 400; // ms
-            const start = performance.now();
-
-            return new Promise(resolve => {
-                function step(timestamp) {
-                    progress = (timestamp - start) / duration;
-                    if (progress > 1) progress = 1;
-                    
-                    pkt.style.offsetDistance = `${progress * 100}%`;
-                    
-                    if (progress < 1) {
-                        requestAnimationFrame(step);
-                    } else {
-                        // Reset for next time, keep wire lit
-                        pkt.classList.remove('active');
-                        resolve();
+                // Module definitions
+                moduleDefs: {
+                    scan: {
+                        name: 'Market Scanner',
+                        icon: 'scan',
+                        color: '#00d4aa',
+                        defaultData: { spread: '0.000%', status: 'scanning' }
+                    },
+                    condition: {
+                        name: 'Condition Gate',
+                        icon: 'condition',
+                        color: '#fbbf24',
+                        defaultData: { threshold: '$40.00', status: 'waiting' }
+                    },
+                    buy: {
+                        name: 'Buy Order',
+                        icon: 'buy',
+                        color: '#3b82f6',
+                        defaultData: { amount: '1,000 ZEPH', price: '---' }
+                    },
+                    bridge: {
+                        name: 'Bridge / Wrap',
+                        icon: 'bridge',
+                        color: '#8b5cf6',
+                        defaultData: { asset: 'wZEPH', status: 'ready' }
+                    },
+                    sell: {
+                        name: 'Sell Order',
+                        icon: 'sell',
+                        color: '#ff6b35',
+                        defaultData: { amount: '1,000 USDT', price: '---' }
+                    },
+                    delay: {
+                        name: 'Delay',
+                        icon: 'delay',
+                        color: '#64748b',
+                        defaultData: { duration: '2s', remaining: '---' }
+                    },
+                    profit: {
+                        name: 'Profit Calculator',
+                        icon: 'profit',
+                        color: '#10b981',
+                        defaultData: { profit: '$0.00', trades: '0' }
+                    },
+                    alert: {
+                        name: 'Alert / Notify',
+                        icon: 'alert',
+                        color: '#f43f5e',
+                        defaultData: { type: 'Telegram', status: 'ready' }
                     }
+                },
+
+                init() {
+                    this.canvas = document.getElementById('canvasArea');
+                    this.wiresLayer = document.getElementById('wiresLayer');
+                    this.dropIndicator = document.getElementById('dropIndicator');
+                    this.tooltip = document.getElementById('tooltip');
+                    
+                    this.bindEvents();
+                    this.updateStats();
+                },
+
+                bindEvents() {
+                    // Palette drag events
+                    document.querySelectorAll('.module-item').forEach(item => {
+                        item.addEventListener('dragstart', (e) => {
+                            e.dataTransfer.setData('moduleType', item.dataset.type);
+                            e.dataTransfer.effectAllowed = 'copy';
+                        });
+                    });
+
+                    // Canvas drop events
+                    this.canvas.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'copy';
+                        this.dropIndicator.classList.add('active');
+                    });
+
+                    this.canvas.addEventListener('dragleave', () => {
+                        this.dropIndicator.classList.remove('active');
+                    });
+
+                    this.canvas.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        this.dropIndicator.classList.remove('active');
+                        const type = e.dataTransfer.getData('moduleType');
+                        if (type && this.moduleDefs[type]) {
+                            const rect = this.canvas.getBoundingClientRect();
+                            const x = e.clientX - rect.left - 100;
+                            const y = e.clientY - rect.top - 50;
+                            this.createNode(type, x, y);
+                        }
+                    });
+
+                    // Canvas click to deselect
+                    this.canvas.addEventListener('click', (e) => {
+                        if (e.target === this.canvas || e.target.classList.contains('canvas-grid')) {
+                            this.deselectAll();
+                        }
+                    });
+
+                    // Mouse move for dragging nodes and connections
+                    document.addEventListener('mousemove', (e) => {
+                        if (this.draggingNode) {
+                            const rect = this.canvas.getBoundingClientRect();
+                            const x = e.clientX - rect.left - this.dragOffset.x;
+                            const y = e.clientY - rect.top - this.dragOffset.y;
+                            this.draggingNode.element.style.left = Math.max(0, x) + 'px';
+                            this.draggingNode.element.style.top = Math.max(0, y) + 'px';
+                            this.updateWires();
+                        }
+
+                        if (this.connectingFrom) {
+                            this.updateTempWire(e);
+                        }
+                    });
+
+                    // Mouse up to stop dragging
+                    document.addEventListener('mouseup', () => {
+                        this.draggingNode = null;
+                        if (this.connectingFrom) {
+                            this.cancelConnection();
+                        }
+                    });
+
+                    // Keyboard shortcuts
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'Delete' || e.key === 'Backspace') {
+                            if (this.selectedNode && document.activeElement.tagName !== 'INPUT') {
+                                this.deleteNode(this.selectedNode.id);
+                            }
+                        }
+                        if (e.key === 'Escape') {
+                            this.deselectAll();
+                            this.cancelConnection();
+                        }
+                    });
+
+                    // Toolbar buttons
+                    document.getElementById('clearAllBtn').addEventListener('click', () => this.clearAll());
+                    document.getElementById('autoLayoutBtn').addEventListener('click', () => this.autoLayout());
+                    document.getElementById('runBtn').addEventListener('click', () => this.runFlow());
+                },
+
+                createNode(type, x, y) {
+                    const def = this.moduleDefs[type];
+                    const id = `node-${++this.nodeIdCounter}`;
+                    
+                    const nodeEl = document.createElement('div');
+                    nodeEl.className = 'canvas-node';
+                    nodeEl.id = id;
+                    nodeEl.style.left = x + 'px';
+                    nodeEl.style.top = y + 'px';
+
+                    nodeEl.innerHTML = `
+                        <div class="node-top-bar">
+                            <div class="node-top-left">
+                                <div class="node-type-icon ${type}" style="background: linear-gradient(135deg, ${def.color}, ${this.darkenColor(def.color)})">
+                                    ${this.getIconSVG(def.icon)}
+                                </div>
+                                <div class="node-type-label">${def.name}</div>
+                            </div>
+                            <button class="node-delete-btn" data-node="${id}">
+                                <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        <div class="node-body">
+                            <div class="node-main-value">${Object.values(def.defaultData)[0]}</div>
+                            <div class="node-sub-text">${Object.values(def.defaultData)[1] || ''}</div>
+                            <div class="node-config">
+                                ${Object.entries(def.defaultData).map(([k, v]) => `
+                                    <div class="config-row">
+                                        <span class="config-label">${k}</span>
+                                        <span class="config-value">${v}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="node-ports">
+                            <div class="port-group">
+                                <div class="port input" data-node="${id}" data-port="in" title="Input"></div>
+                            </div>
+                            <div class="port-group">
+                                <div class="port output" data-node="${id}" data-port="out" title="Output"></div>
+                            </div>
+                        </div>
+                    `;
+
+                    this.canvas.appendChild(nodeEl);
+
+                    // Store node data
+                    const nodeData = {
+                        id,
+                        type,
+                        element: nodeEl,
+                        x,
+                        y,
+                        data: { ...def.defaultData }
+                    };
+                    this.nodes.set(id, nodeData);
+
+                    // Bind node events
+                    this.bindNodeEvents(nodeEl, id);
+
+                    // Animate in
+                    nodeEl.style.opacity = '0';
+                    nodeEl.style.transform = 'scale(0.9)';
+                    requestAnimationFrame(() => {
+                        nodeEl.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        nodeEl.style.opacity = '1';
+                        nodeEl.style.transform = 'scale(1)';
+                    });
+
+                    this.updateStats();
+                    return nodeData;
+                },
+
+                bindNodeEvents(nodeEl, nodeId) {
+                    // Drag to move
+                    nodeEl.addEventListener('mousedown', (e) => {
+                        if (e.target.closest('.port') || e.target.closest('.node-delete-btn')) return;
+                        
+                        this.selectNode(nodeId);
+                        const rect = nodeEl.getBoundingClientRect();
+                        const canvasRect = this.canvas.getBoundingClientRect();
+                        this.draggingNode = this.nodes.get(nodeId);
+                        this.dragOffset = {
+                            x: e.clientX - rect.left,
+                            y: e.clientY - rect.top
+                        };
+                        e.preventDefault();
+                    });
+
+                    // Delete button
+                    nodeEl.querySelector('.node-delete-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.deleteNode(nodeId);
+                    });
+
+                    // Port events for connections
+                    nodeEl.querySelectorAll('.port').forEach(port => {
+                        port.addEventListener('mousedown', (e) => {
+                            e.stopPropagation();
+                            const portType = port.dataset.port;
+                            const node = this.nodes.get(nodeId);
+                            
+                            if (portType === 'output') {
+                                this.connectingFrom = { nodeId, port, type: 'output' };
+                                this.createTempWire(e);
+                            }
+                        });
+
+                        port.addEventListener('mouseup', (e) => {
+                            if (this.connectingFrom && port.dataset.port === 'input') {
+                                if (this.connectingFrom.nodeId !== nodeId) {
+                                    this.createConnection(this.connectingFrom.nodeId, nodeId);
+                                }
+                                this.cancelConnection();
+                            }
+                        });
+                    });
+                },
+
+                createTempWire(e) {
+                    this.tempWire = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    this.tempWire.setAttribute('class', 'temp-wire');
+                    this.wiresLayer.appendChild(this.tempWire);
+                    this.updateTempWire(e);
+                },
+
+                updateTempWire(e) {
+                    if (!this.tempWire || !this.connectingFrom) return;
+                    
+                    const fromNode = this.nodes.get(this.connectingFrom.nodeId);
+                    const fromPort = fromNode.element.querySelector('.port.output');
+                    const fromRect = fromPort.getBoundingClientRect();
+                    const canvasRect = this.canvas.getBoundingClientRect();
+                    
+                    const x1 = fromRect.left + fromRect.width/2 - canvasRect.left;
+                    const y1 = fromRect.top + fromRect.height/2 - canvasRect.top;
+                    const x2 = e.clientX - canvasRect.left;
+                    const y2 = e.clientY - canvasRect.top;
+                    
+                    const path = this.generateWirePath(x1, y1, x2, y2);
+                    this.tempWire.setAttribute('d', path);
+                },
+
+                cancelConnection() {
+                    if (this.tempWire) {
+                        this.tempWire.remove();
+                        this.tempWire = null;
+                    }
+                    this.connectingFrom = null;
+                },
+
+                createConnection(fromId, toId) {
+                    // Check if connection already exists
+                    const exists = this.connections.some(c => c.from === fromId && c.to === toId);
+                    if (exists) return;
+
+                    // Remove existing connection to this input
+                    this.connections = this.connections.filter(c => c.to !== toId);
+
+                    this.connections.push({ from: fromId, to: toId });
+                    
+                    // Update port states
+                    const fromNode = this.nodes.get(fromId);
+                    const toNode = this.nodes.get(toId);
+                    if (fromNode) fromNode.element.querySelector('.port.output').classList.add('connected');
+                    if (toNode) toNode.element.querySelector('.port.input').classList.add('connected');
+
+                    this.updateWires();
+                    this.updateStats();
+                },
+
+                deleteConnection(fromId, toId) {
+                    this.connections = this.connections.filter(c => !(c.from === fromId && c.to === toId));
+                    this.updateWires();
+                    this.updateStats();
+                },
+
+                generateWirePath(x1, y1, x2, y2) {
+                    const dx = Math.abs(x2 - x1);
+                    const controlOffset = Math.max(50, dx * 0.4);
+                    return `M ${x1} ${y1} C ${x1 + controlOffset} ${y1}, ${x2 - controlOffset} ${y2}, ${x2} ${y2}`;
+                },
+
+                updateWires() {
+                    const canvasRect = this.canvas.getBoundingClientRect();
+                    let wiresHTML = '';
+
+                    this.connections.forEach(conn => {
+                        const fromNode = this.nodes.get(conn.from);
+                        const toNode = this.nodes.get(conn.to);
+                        if (!fromNode || !toNode) return;
+
+                        const fromPort = fromNode.element.querySelector('.port.output');
+                        const toPort = toNode.element.querySelector('.port.input');
+                        if (!fromPort || !toPort) return;
+
+                        const fromRect = fromPort.getBoundingClientRect();
+                        const toRect = toPort.getBoundingClientRect();
+
+                        const x1 = fromRect.left + fromRect.width/2 - canvasRect.left;
+                        const y1 = fromRect.top + fromRect.height/2 - canvasRect.top;
+                        const x2 = toRect.left + toRect.width/2 - canvasRect.left;
+                        const y2 = toRect.top + toRect.height/2 - canvasRect.top;
+
+                        const path = this.generateWirePath(x1, y1, x2, y2);
+                        wiresHTML += `<path class="wire-path" d="${path}" data-from="${conn.from}" data-to="${conn.to}"/>`;
+                    });
+
+                    // Preserve temp wire
+                    const tempWireHTML = this.tempWire ? this.tempWire.outerHTML : '';
+                    this.wiresLayer.innerHTML = wiresHTML + tempWireHTML;
+                },
+
+                selectNode(nodeId) {
+                    this.deselectAll();
+                    const node = this.nodes.get(nodeId);
+                    if (node) {
+                        node.element.classList.add('selected');
+                        this.selectedNode = node;
+                    }
+                },
+
+                deselectAll() {
+                    this.nodes.forEach(node => node.element.classList.remove('selected'));
+                    this.selectedNode = null;
+                },
+
+                deleteNode(nodeId) {
+                    const node = this.nodes.get(nodeId);
+                    if (!node) return;
+
+                    // Animate out
+                    node.element.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                    node.element.style.opacity = '0';
+                    node.element.style.transform = 'scale(0.9)';
+
+                    setTimeout(() => {
+                        node.element.remove();
+                        this.nodes.delete(nodeId);
+                        
+                        // Remove connections involving this node
+                        this.connections = this.connections.filter(c => c.from !== nodeId && c.to !== nodeId);
+                        this.updateWires();
+                        this.updateStats();
+                    }, 200);
+
+                    if (this.selectedNode && this.selectedNode.id === nodeId) {
+                        this.selectedNode = null;
+                    }
+                },
+
+                clearAll() {
+                    const nodeIds = Array.from(this.nodes.keys());
+                    nodeIds.forEach((id, i) => {
+                        setTimeout(() => this.deleteNode(id), i * 50);
+                    });
+                },
+
+                autoLayout() {
+                    const nodes = Array.from(this.nodes.values());
+                    const cols = Math.ceil(Math.sqrt(nodes.length));
+                    
+                    nodes.forEach((node, i) => {
+                        const col = i % cols;
+                        const row = Math.floor(i / cols);
+                        const x = 60 + col * 280;
+                        const y = 100 + row * 200;
+                        
+                        node.element.style.transition = 'left 0.4s ease, top 0.4s ease';
+                        node.element.style.left = x + 'px';
+                        node.element.style.top = y + 'px';
+                        
+                        setTimeout(() => {
+                            node.element.style.transition = '';
+                        }, 400);
+                    });
+
+                    setTimeout(() => this.updateWires(), 50);
+                },
+
+                async runFlow() {
+                    if (this.nodes.size === 0) return;
+
+                    const statusPill = document.getElementById('statusPill');
+                    const statusText = document.getElementById('statusText');
+                    statusPill.classList.add('active');
+                    statusText.textContent = 'RUNNING';
+
+                    // Find nodes without incoming connections (start nodes)
+                    const startNodes = Array.from(this.nodes.values()).filter(node => 
+                        !this.connections.some(c => c.to === node.id)
+                    );
+
+                    // BFS execution
+                    const executed = new Set();
+                    const queue = [...startNodes];
+
+                    while (queue.length > 0) {
+                        const node = queue.shift();
+                        if (executed.has(node.id)) continue;
+
+                        await this.executeNode(node);
+                        executed.add(node.id);
+
+                        // Find connected nodes
+                        this.connections
+                            .filter(c => c.from === node.id)
+                            .forEach(c => {
+                                const nextNode = this.nodes.get(c.to);
+                                if (nextNode && !executed.has(nextNode.id)) {
+                                    queue.push(nextNode);
+                                }
+                            });
+                    }
+
+                    setTimeout(() => {
+                        statusPill.classList.remove('active');
+                        statusText.textContent = 'READY';
+                        this.nodes.forEach(node => {
+                            node.element.classList.remove('processing', 'success');
+                        });
+                    }, 1000);
+                },
+
+                async executeNode(node) {
+                    return new Promise(resolve => {
+                        node.element.classList.add('processing');
+                        
+                        // Animate wire packet if there's a connection from this node
+                        const conn = this.connections.find(c => c.from === node.id);
+                        if (conn) {
+                            this.animatePacket(node.id, conn.to);
+                        }
+
+                        setTimeout(() => {
+                            node.element.classList.remove('processing');
+                            node.element.classList.add('success');
+                            
+                            // Update node value based on type
+                            const valueEl = node.element.querySelector('.node-main-value');
+                            if (node.type === 'scan') valueEl.textContent = '+0.087%';
+                            else if (node.type === 'buy') valueEl.textContent = '1,000 ZEPH';
+                            else if (node.type === 'bridge') valueEl.textContent = 'Complete';
+                            else if (node.type === 'sell') valueEl.textContent = '$3,087';
+                            else if (node.type === 'profit') valueEl.textContent = '+$27.00';
+                            
+                            resolve();
+                        }, 600);
+                    });
+                },
+
+                animatePacket(fromId, toId) {
+                    const wire = this.wiresLayer.querySelector(`[data-from="${fromId}"][data-to="${toId}"]`);
+                    if (!wire) return;
+
+                    wire.classList.add('active');
+
+                    const pathLength = wire.getTotalLength();
+                    const packet = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    packet.setAttribute('r', '5');
+                    packet.setAttribute('class', 'wire-packet');
+                    this.wiresLayer.appendChild(packet);
+
+                    let progress = 0;
+                    const duration = 500;
+                    const startTime = performance.now();
+
+                    const animate = (time) => {
+                        progress = Math.min((time - startTime) / duration, 1);
+                        const point = wire.getPointAtLength(progress * pathLength);
+                        packet.setAttribute('cx', point.x);
+                        packet.setAttribute('cy', point.y);
+
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        } else {
+                            packet.remove();
+                            wire.classList.remove('active');
+                        }
+                    };
+
+                    requestAnimationFrame(animate);
+                },
+
+                updateStats() {
+                    document.getElementById('nodeCount').textContent = this.nodes.size;
+                    document.getElementById('connectionCount').textContent = this.connections.length;
+                },
+
+                getIconSVG(type) {
+                    const icons = {
+                        scan: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>',
+                        buy: '<svg viewBox="0 0 24 24"><path d="M12 2v20M17 7l-5-5-5 5"/></svg>',
+                        bridge: '<svg viewBox="0 0 24 24"><path d="M8 7h8M8 17h8M6 7l-2 5 2 5M18 7l2 5-2 5"/></svg>',
+                        sell: '<svg viewBox="0 0 24 24"><path d="M12 22V2M7 17l5 5 5-5"/></svg>',
+                        condition: '<svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></svg>',
+                        delay: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+                        profit: '<svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>',
+                        alert: '<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>'
+                    };
+                    return icons[type] || '';
+                },
+
+                darkenColor(hex) {
+                    const r = parseInt(hex.slice(1, 3), 16);
+                    const g = parseInt(hex.slice(3, 5), 16);
+                    const b = parseInt(hex.slice(5, 7), 16);
+                    return `#${Math.round(r * 0.7).toString(16).padStart(2, '0')}${Math.round(g * 0.7).toString(16).padStart(2, '0')}${Math.round(b * 0.7).toString(16).padStart(2, '0')}`;
                 }
-                requestAnimationFrame(step);
+            };
+
+            // Initialize
+            document.addEventListener('DOMContentLoaded', () => {
+                BlackholeEngine.init();
+
+                // Create default workflow
+                setTimeout(() => {
+                    const scan = BlackholeEngine.createNode('scan', 60, 180);
+                    const condition = BlackholeEngine.createNode('condition', 320, 120);
+                    const buy = BlackholeEngine.createNode('buy', 580, 180);
+                    const bridge = BlackholeEngine.createNode('bridge', 840, 120);
+                    const sell = BlackholeEngine.createNode('sell', 1100, 180);
+                    const profit = BlackholeEngine.createNode('profit', 1360, 120);
+
+                    setTimeout(() => {
+                        BlackholeEngine.createConnection('node-1', 'node-2');
+                        BlackholeEngine.createConnection('node-2', 'node-3');
+                        BlackholeEngine.createConnection('node-3', 'node-4');
+                        BlackholeEngine.createConnection('node-4', 'node-5');
+                        BlackholeEngine.createConnection('node-5', 'node-6');
+                    }, 100);
+                }, 200);
             });
-        }
-
-        function setNodeState(index, stateName) {
-            const node = DOM.nodes[index];
-            node.el.classList.remove('active', 'success');
-            if (stateName) node.el.classList.add(stateName);
-        }
-
-        // --- Execution Flow ---
-        async function executeTrade(market) {
-            if (state.isLocked) return;
-            state.isLocked = true;
-            setStatus(true);
-
-            // Reset visual state
-            DOM.wireSvg.querySelectorAll('.wire-path').forEach(w => w.classList.remove('active'));
-
-            try {
-                log(`Threshold met. Starting trade for profit ${formatMoney(market.grossProfit)}`, 'warn');
-
-                // Step 1: Already green (Scan success)
-                await sleep(300);
-
-                // Step 2: Buy
-                setNodeState(0, 'success'); // Ensure start node stays green
-                setNodeState(1, 'active');
-                DOM.nodes[1].val.textContent = 'BUYING...';
-                await animateWire(0);
-                
-                DOM.nodes[1].val.textContent = 'BOUGHT';
-                setNodeState(1, 'success');
-                log(`Bought 1,000 ZEPH on MEXC @ ${market.price.toFixed(4)}`, 'success');
-                await sleep(200);
-
-                // Step 3: Bridge
-                setNodeState(2, 'active');
-                DOM.nodes[2].val.textContent = 'BRIDGING...';
-                await animateWire(1);
-
-                DOM.nodes[2].val.textContent = 'WRAPPED';
-                setNodeState(2, 'success');
-                log(`Bridged to wZEPH.`, 'info');
-                await sleep(200);
-
-                // Step 4: Sell
-                setNodeState(3, 'active');
-                DOM.nodes[3].val.textContent = 'SELLING...';
-                await animateWire(2);
-
-                const sellPrice = market.price * (1 + market.spread);
-                DOM.nodes[3].val.textContent = sellPrice.toFixed(4);
-                setNodeState(3, 'success');
-                log(`Sold on EVM @ ${sellPrice.toFixed(4)}`, 'success');
-                await sleep(200);
-
-                // Step 5: P&L
-                setNodeState(4, 'active');
-                await animateWire(3);
-
-                // Calculate Net Profit
-                const netProfit = market.grossProfit - CONFIG.GAS_COST;
-                state.totalProfit += netProfit;
-                state.balance += netProfit;
-                state.tradeCount++;
-
-                DOM.nodes[4].val.textContent = `+${formatMoney(netProfit)}`;
-                DOM.nodes[4].val.style.color = netProfit >= 0 ? 'var(--emerald)' : 'var(--rose)';
-                setNodeState(4, 'success');
-                
-                // Update stats
-                DOM.statTrades.textContent = state.tradeCount;
-                DOM.statProfit.textContent = formatMoney(state.totalProfit);
-
-                log(`Trade complete. Net Profit: ${formatMoney(netProfit)}`, 'success');
-
-                // Reset after a pause
-                await sleep(2000);
-                
-                // Reset node values for next cycle
-                DOM.nodes[1].val.textContent = '---';
-                DOM.nodes[2].val.textContent = '---';
-                DOM.nodes[3].val.textContent = '---';
-                DOM.nodes[4].val.textContent = '$0.00';
-                DOM.nodes[4].val.style.color = '';
-                
-                for(let i=1; i<=4; i++) setNodeState(i, null);
-
-            } catch (e) {
-                console.error(e);
-                log("Error during execution", "warn");
-            } finally {
-                state.isLocked = false;
-                setStatus(false);
-            }
-        }
-
-        // --- Main Loop ---
-        function tick() {
-            if (state.isLocked) return;
-
-            const market = scanMarket();
-            updateUI(market);
-
-            // Automated trigger
-            if (market.thresholdMet && state.autoEnabled) {
-                executeTrade(market);
-            }
-        }
-
-        // --- Init ---
-        window.addEventListener('load', () => {
-            drawWires();
-            window.addEventListener('resize', drawWires);
-
-            // Toggle Switch Logic
-            DOM.autoSwitch.addEventListener('click', () => {
-                state.autoEnabled = !state.autoEnabled;
-                DOM.autoSwitch.classList.toggle('active', state.autoEnabled);
-                log(`Auto-trade ${state.autoEnabled ? 'ENABLED' : 'DISABLED'}`, state.autoEnabled ? 'success' : 'warn');
-            });
-
-            log("System Initialized. Gas Fee: $10. Threshold: $20.");
-            
-            // Start loop
-            setInterval(tick, CONFIG.TICK_RATE);
-        });
-
-    })();
+        })();
     </script>
 </body>
+</html>
