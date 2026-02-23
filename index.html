@@ -3,395 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arbitrage · MEXC conditional workflow</title>
+    <title>Arbitrage · MEXC Auto-Workflow</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         :root {
             --bg-void: #06080d;
             --bg-deep: #0b0f18;
             --bg-surface: #111827;
             --bg-panel: #1a2234;
-            --bg-card: #1e2738;
             --border-dim: #2a3444;
             --text-bright: #f1f5f9;
             --text-muted: #7a8ba3;
-            --text-dim: #4a5a70;
             --cyan: #06b6d4;
-            --cyan-glow: rgba(6, 182, 212, 0.4);
             --emerald: #10b981;
-            --emerald-glow: rgba(16, 185, 129, 0.4);
             --amber: #f59e0b;
-            --amber-glow: rgba(245, 158, 11, 0.4);
             --rose: #f43f5e;
-            --violet: #8b5cf6;
-            --wire-idle: #2a3f5a;
-            --wire-active: #06b6d4;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Space Grotesk', sans-serif;
             background: var(--bg-void);
             color: var(--text-bright);
-            min-height: 100vh;
+            height: 100vh;
             overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            grid-template-rows: 64px 1fr 160px;
         }
 
+        /* --- Ambient Background --- */
         .ambient-bg {
             position: fixed;
             inset: 0;
             pointer-events: none;
             z-index: 0;
-        }
-
-        .ambient-bg::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
             background: 
                 radial-gradient(ellipse 800px 600px at 20% 30%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse 600px 500px at 80% 70%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
-                radial-gradient(ellipse 400px 400px at 50% 50%, rgba(16, 185, 129, 0.04) 0%, transparent 50%);
-            animation: ambientDrift 30s ease-in-out infinite;
+                radial-gradient(ellipse 600px 500px at 80% 70%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
         }
-
-        @keyframes ambientDrift {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            33% { transform: translate(2%, 1%) rotate(1deg); }
-            66% { transform: translate(-1%, 2%) rotate(-1deg); }
-        }
-
         .grid-overlay {
-            position: absolute;
+            position: fixed;
             inset: 0;
             background-image: 
                 linear-gradient(rgba(6, 182, 212, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(6, 182, 212, 0.03) 1px, transparent 1px);
             background-size: 60px 60px;
             mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 70%);
+            z-index: 0;
         }
 
-        .app-container {
-            position: relative;
-            z-index: 1;
-            display: grid;
-            grid-template-columns: 1fr 380px;
-            grid-template-rows: 64px 1fr 180px;
-            height: 100vh;
-        }
-
+        /* --- Layout --- */
         header {
             grid-column: 1 / -1;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 28px;
+            padding: 0 24px;
             background: linear-gradient(180deg, var(--bg-deep) 0%, transparent 100%);
             border-bottom: 1px solid var(--border-dim);
-        }
-
-        .logo-group {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .logo-icon {
-            width: 42px;
-            height: 42px;
-            background: linear-gradient(135deg, var(--cyan) 0%, var(--violet) 100%);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 24px var(--cyan-glow);
-        }
-
-        .logo-icon svg {
-            width: 24px;
-            height: 24px;
-            stroke: white;
-            fill: none;
-            stroke-width: 2;
-        }
-
-        .logo-text {
-            font-size: 1.25rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .logo-text span {
-            font-weight: 400;
-            color: var(--text-muted);
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 18px;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 100px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .status-indicator.executing {
-            background: rgba(245, 158, 11, 0.1);
-            border-color: rgba(245, 158, 11, 0.3);
-            color: var(--amber);
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--emerald);
-            border-radius: 50%;
-            animation: statusPulse 2s ease-in-out infinite;
-        }
-
-        .status-indicator.executing .status-dot {
-            background: var(--amber);
-            animation: statusPulseFast 0.6s ease-in-out infinite;
-        }
-
-        @keyframes statusPulse {
-            0%, 100% { opacity: 0.4; transform: scale(0.9); }
-            50% { opacity: 1; transform: scale(1.1); }
-        }
-
-        @keyframes statusPulseFast {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
-        .balance-display {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 1rem;
-            font-weight: 600;
-            padding: 10px 20px;
-            background: var(--bg-panel);
-            border: 1px solid var(--border-dim);
-            border-radius: 10px;
-        }
-
-        .balance-display span {
-            color: var(--emerald);
-        }
-
-        /* MEXC control strip */
-        .mexc-control {
-            position: absolute;
-            top: 80px;
-            left: 28px;
-            z-index: 20;
-            background: var(--bg-card);
-            border: 1px solid var(--border-dim);
-            border-radius: 40px;
-            padding: 12px 24px;
-            display: flex;
-            align-items: center;
-            gap: 32px;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .mexc-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .mexc-label {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-        }
-
-        .mexc-value {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--cyan);
-        }
-
-        .mexc-threshold {
-            font-size: 0.8rem;
-            padding: 4px 12px;
-            background: rgba(245, 158, 11, 0.15);
-            border-radius: 40px;
-            color: var(--amber);
-        }
-
-        .mexc-threshold.met {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--emerald);
-        }
-
-        .toggle-activate {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-dim);
-            border-radius: 40px;
-            padding: 8px 24px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .toggle-activate.active {
-            background: var(--emerald);
-            color: black;
-            border-color: var(--emerald);
-        }
-
-        .toggle-activate.disabled {
-            opacity: 0.4;
-            pointer-events: none;
+            z-index: 10;
         }
 
         #workflow-canvas {
             position: relative;
-            background: transparent;
-            overflow: hidden;
-        }
-
-        .wire-svg {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
             z-index: 1;
-        }
-
-        .wire-path {
-            fill: none;
-            stroke: var(--wire-idle);
-            stroke-width: 2;
-            stroke-linecap: round;
-            transition: stroke 0.4s ease, filter 0.4s ease;
-        }
-
-        .wire-path.active {
-            stroke: var(--wire-active);
-            filter: drop-shadow(0 0 8px var(--cyan-glow));
-        }
-
-        .wire-packet {
-            fill: var(--cyan);
-            filter: drop-shadow(0 0 12px var(--cyan));
-        }
-
-        .node-card {
-            position: absolute;
-            width: 190px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-dim);
-            border-radius: 16px;
-            padding: 16px;
-            z-index: 10;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(8px);
-        }
-
-        .node-card::before {
-            content: '';
-            position: absolute;
-            inset: -1px;
-            border-radius: 17px;
-            background: linear-gradient(135deg, transparent 40%, var(--cyan-glow) 100%);
-            opacity: 0;
-            z-index: -1;
-            transition: opacity 0.3s ease;
-        }
-
-        .node-card:hover::before {
-            opacity: 0.3;
-        }
-
-        .node-card.active {
-            border-color: var(--cyan);
-            box-shadow: 0 0 40px -10px var(--cyan-glow);
-        }
-
-        .node-card.processing {
-            border-color: var(--amber);
-            box-shadow: 0 0 40px -10px var(--amber-glow);
-        }
-
-        .node-card.success {
-            border-color: var(--emerald);
-            box-shadow: 0 0 40px -10px var(--emerald-glow);
-        }
-
-        .node-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .node-icon {
-            width: 28px;
-            height: 28px;
-            background: var(--bg-surface);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .node-icon svg {
-            width: 16px;
-            height: 16px;
-            stroke: var(--text-muted);
-            fill: none;
-            stroke-width: 2;
-        }
-
-        .node-title {
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-muted);
-        }
-
-        .node-value {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 1.35rem;
-            font-weight: 600;
-            margin-bottom: 4px;
-            transition: color 0.3s ease;
-        }
-
-        .node-card.success .node-value {
-            color: var(--emerald);
-        }
-
-        .node-sub {
-            font-size: 0.75rem;
-            color: var(--text-dim);
+            overflow: hidden;
         }
 
         #dashboard {
@@ -401,599 +79,626 @@
             display: flex;
             flex-direction: column;
             gap: 16px;
+            z-index: 10;
             overflow-y: auto;
-        }
-
-        .dash-card {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-dim);
-            border-radius: 16px;
-            padding: 18px;
-        }
-
-        .dash-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
-        }
-
-        .dash-card-title {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--text-muted);
-        }
-
-        .dash-card-badge {
-            font-size: 0.65rem;
-            padding: 4px 10px;
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--emerald);
-            border-radius: 100px;
-            font-weight: 600;
-        }
-
-        .price-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .price-item {
-            background: var(--bg-surface);
-            border-radius: 12px;
-            padding: 14px;
-            text-align: center;
-        }
-
-        .price-label {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            margin-bottom: 6px;
-        }
-
-        .price-value {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--cyan);
-        }
-
-        .chart-wrapper {
-            height: 140px;
-            position: relative;
-            margin-top: 8px;
-        }
-
-        .chart-svg {
-            width: 100%;
-            height: 100%;
-        }
-
-        .chart-line {
-            fill: none;
-            stroke: var(--cyan);
-            stroke-width: 2;
-        }
-
-        .chart-area {
-            fill: url(#chartGradient);
-        }
-
-        .chart-threshold {
-            stroke: var(--emerald);
-            stroke-width: 1;
-            stroke-dasharray: 4 4;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .stat-item {
-            background: var(--bg-surface);
-            border-radius: 12px;
-            padding: 14px;
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            margin-bottom: 6px;
-        }
-
-        .stat-value {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--emerald);
         }
 
         #logs-panel {
             grid-column: 1 / 2;
             background: var(--bg-deep);
             border-top: 1px solid var(--border-dim);
-            padding: 14px 24px;
+            padding: 12px 24px;
             font-family: 'IBM Plex Mono', monospace;
             font-size: 0.75rem;
+            z-index: 10;
             overflow-y: auto;
         }
 
-        .log-row {
+        /* --- Header Components --- */
+        .logo-group {
             display: flex;
-            gap: 14px;
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(42, 52, 68, 0.5);
-            animation: logFadeIn 0.3s ease;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--cyan), #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+        }
+        .logo-icon svg { width: 22px; height: 22px; stroke: white; fill: none; stroke-width: 2; }
+        
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .status-pill.idle { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--emerald); }
+        .status-pill.running { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); color: var(--amber); }
+        
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+        .status-pill.running .status-dot { animation: pulse 0.6s infinite; }
+
+        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+        /* --- Control Strip --- */
+        .control-strip {
+            position: absolute;
+            top: 80px;
+            left: 24px;
+            z-index: 20;
+            background: rgba(26, 34, 52, 0.9);
+            border: 1px solid var(--border-dim);
+            border-radius: 16px;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
         }
 
-        @keyframes logFadeIn {
-            from { opacity: 0; transform: translateY(-4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .log-time {
-            color: var(--text-dim);
-            flex-shrink: 0;
-        }
-
-        .log-type {
-            width: 8px;
-            height: 8px;
-            border-radius: 2px;
-            flex-shrink: 0;
-            margin-top: 5px;
-        }
-
-        .log-type.info { background: var(--cyan); }
-        .log-type.warn { background: var(--amber); }
-        .log-type.success { background: var(--emerald); }
-
-        .log-msg {
+        .ctrl-item { display: flex; flex-direction: column; gap: 4px; }
+        .ctrl-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .ctrl-value { font-family: 'IBM Plex Mono', monospace; font-size: 1.1rem; font-weight: 600; color: var(--cyan); }
+        
+        .threshold-badge {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(122, 139, 163, 0.1);
             color: var(--text-muted);
+            transition: all 0.3s;
+        }
+        .threshold-badge.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--emerald);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
         }
 
+        .master-switch {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .switch-track {
+            width: 44px; height: 24px;
+            background: var(--bg-surface);
+            border-radius: 12px;
+            border: 1px solid var(--border-dim);
+            position: relative;
+            transition: all 0.3s;
+        }
+        .switch-thumb {
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 18px; height: 18px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        .master-switch.active .switch-track { background: var(--emerald); border-color: var(--emerald); }
+        .master-switch.active .switch-thumb { left: 22px; background: white; }
+        .switch-label { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); }
+        .master-switch.active .switch-label { color: var(--emerald); }
+
+        /* --- Nodes & Canvas --- */
+        .wire-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .wire-path {
+            fill: none;
+            stroke: rgba(6, 182, 212, 0.2);
+            stroke-width: 2;
+            transition: stroke 0.4s;
+        }
+        .wire-path.active { stroke: var(--cyan); filter: drop-shadow(0 0 6px var(--cyan)); }
+        .wire-packet {
+            fill: var(--cyan);
+            filter: drop-shadow(0 0 8px var(--cyan));
+            opacity: 0;
+        }
+        .wire-packet.active { opacity: 1; }
+
+        .node-card {
+            position: absolute;
+            width: 200px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-dim);
+            border-radius: 16px;
+            padding: 18px;
+            z-index: 10;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .node-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: var(--border-dim);
+            transition: background 0.3s;
+        }
+        .node-card.active::before { background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+        .node-card.success::before { background: var(--emerald); box-shadow: 0 0 12px var(--emerald); }
+        .node-card.success { border-color: rgba(16, 185, 129, 0.3); }
+
+        .node-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.08em; margin-bottom: 10px; display: flex; justify-content: space-between;}
+        .node-value { font-family: 'IBM Plex Mono', monospace; font-size: 1.4rem; font-weight: 700; color: var(--text-bright); margin-bottom: 4px; transition: color 0.3s; }
+        .node-card.success .node-value { color: var(--emerald); }
+        .node-sub { font-size: 0.75rem; color: var(--text-muted); }
+
+        /* --- Dashboard --- */
+        .dash-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-dim);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .dash-header { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .stat-box { background: var(--bg-surface); padding: 12px; border-radius: 8px; text-align: center; }
+        .stat-label { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 4px; }
+        .stat-val { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--cyan); }
+        .stat-val.profit { color: var(--emerald); }
+
+        /* --- Logs --- */
+        .log-entry { display: flex; gap: 12px; padding: 4px 0; border-bottom: 1px solid rgba(42, 52, 68, 0.3); }
+        .log-time { color: var(--text-muted); opacity: 0.6; }
+        .log-msg { color: var(--text-muted); }
         .log-msg.success { color: var(--emerald); }
         .log-msg.warn { color: var(--amber); }
+
     </style>
 </head>
 <body>
-    <div class="ambient-bg"><div class="grid-overlay"></div></div>
+    <div class="ambient-bg"></div>
+    <div class="grid-overlay"></div>
 
-    <div class="app-container">
-        <header>
-            <div class="logo-group">
-                <div class="logo-icon">
-                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                </div>
-                <div class="logo-text">MEXC Arb <span>/ conditional</span></div>
-            </div>
-            <div class="header-actions">
-                <div class="status-indicator" id="statusIndicator">
-                    <div class="status-dot"></div>
-                    <span id="statusText">SCANNING</span>
-                </div>
-                <div class="balance-display">Balance: <span id="balanceValue">$10,000.00</span></div>
-            </div>
-        </header>
-
-        <!-- MEXC control bar (floating) -->
-        <div class="mexc-control">
-            <div class="mexc-item">
-                <span class="mexc-label">MEXC ask</span>
-                <span class="mexc-value" id="mexcAsk">$3.00</span>
-            </div>
-            <div class="mexc-item">
-                <span class="mexc-label">Fee (gas)</span>
-                <span class="mexc-value" id="feeDisplay">$20</span>
-            </div>
-            <div class="mexc-item">
-                <span class="mexc-label">2× fee</span>
-                <span class="mexc-value" id="twiceFee">$40.00</span>
-            </div>
-            <div class="mexc-item">
-                <span class="mexc-label">Gross profit</span>
-                <span class="mexc-value" id="grossProfit">$0.00</span>
-            </div>
-            <div class="mexc-threshold" id="thresholdBadge">⚡ threshold not met</div>
-            <div class="toggle-activate disabled" id="toggleBtn">▶ activate full process</div>
+    <header>
+        <div class="logo-group">
+            <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+            <div style="font-size: 1.2rem; font-weight: 700;">MEXC Arb <span style="font-weight: 400; opacity: 0.6; margin-left: 8px;">Auto-Execution Engine</span></div>
         </div>
+        <div class="status-pill idle" id="statusPill">
+            <div class="status-dot"></div>
+            <span id="statusText">MONITORING</span>
+        </div>
+    </header>
 
-        <!-- Workflow canvas with nodes -->
-        <div id="workflow-canvas">
-            <svg class="wire-svg" id="wireSvg"></svg>
-
-            <div class="node-card" id="node-scan" style="left: 60px; top: 240px;">
-                <div class="node-header"><div class="node-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div><div class="node-title">1. Market Scan</div></div>
-                <div class="node-value" id="spreadDisplay">0.000%</div>
-                <div class="node-sub">spread (EVM - MEXC)</div>
+    <div id="workflow-canvas">
+        <!-- Floating Control Strip -->
+        <div class="control-strip">
+            <div class="ctrl-item">
+                <span class="ctrl-label">MEXC Ask</span>
+                <span class="ctrl-value" id="dispPrice">$3.00</span>
             </div>
-
-            <div class="node-card" id="node-buy" style="left: 300px; top: 140px;">
-                <div class="node-header"><div class="node-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 7l-5-5-5 5"/></svg></div><div class="node-title">2. Buy on MEXC</div></div>
-                <div class="node-value" id="buyDisplay">---</div>
-                <div class="node-sub">1,000 ZEPH</div>
+            <div class="ctrl-item">
+                <span class="ctrl-label">Net Spread</span>
+                <span class="ctrl-value" id="dispSpread">0.00%</span>
             </div>
-
-            <div class="node-card" id="node-bridge" style="left: 540px; top: 260px;">
-                <div class="node-header"><div class="node-icon"><svg viewBox="0 0 24 24"><path d="M8 7h8M8 17h8M6 7l-2 5 2 5M18 7l2 5-2 5"/></svg></div><div class="node-title">3. Wrap / Bridge</div></div>
-                <div class="node-value" id="bridgeDisplay">---</div>
-                <div class="node-sub">to wZEPH</div>
+            <div class="ctrl-item">
+                <span class="ctrl-label">Gross Profit</span>
+                <span class="ctrl-value" id="dispGross">$0.00</span>
             </div>
+            
+            <div class="threshold-badge" id="threshBadge">Requires ≥ $20.00</div>
 
-            <div class="node-card" id="node-sell" style="left: 780px; top: 160px;">
-                <div class="node-header"><div class="node-icon"><svg viewBox="0 0 24 24"><path d="M12 22V2M7 17l5 5 5-5"/></svg></div><div class="node-title">4. Swap & sell</div></div>
-                <div class="node-value" id="sellDisplay">---</div>
-                <div class="node-sub">wZSD → USDT</div>
-            </div>
-
-            <div class="node-card" id="node-profit" style="left: 1000px; top: 280px;">
-                <div class="node-header"><div class="node-icon"><svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div><div class="node-title">5. P&L</div></div>
-                <div class="node-value" id="profitDisplay">$0.00</div>
-                <div class="node-sub">net after gas</div>
+            <!-- Master Switch for Auto-Trade -->
+            <div class="master-switch active" id="autoSwitch">
+                <div class="switch-track"><div class="switch-thumb"></div></div>
+                <div class="switch-label">Auto-Trade</div>
             </div>
         </div>
 
-        <div id="dashboard">
-            <div class="dash-card">
-                <div class="dash-card-header"><div class="dash-card-title">Market Prices</div></div>
-                <div class="price-grid">
-                    <div class="price-item"><div class="price-label">MEXC (ZEPH)</div><div class="price-value" id="priceMexc">$3.00000</div></div>
-                    <div class="price-item"><div class="price-label">EVM implied</div><div class="price-value" id="priceEvm">$3.09000</div></div>
-                </div>
-            </div>
+        <svg class="wire-svg" id="wireSvg"></svg>
 
-            <div class="dash-card">
-                <div class="dash-card-header"><div class="dash-card-title">Spread history</div><div class="dash-card-badge">threshold 0.05%</div></div>
-                <div class="chart-wrapper">
-                    <svg class="chart-svg" id="chartSvg" viewBox="0 0 340 140" preserveAspectRatio="none">
-                        <defs><linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="rgba(6, 182, 212, 0.3)"/><stop offset="100%" stop-color="rgba(6, 182, 212, 0)"/></linearGradient></defs>
-                        <line class="chart-threshold" id="thresholdLine" x1="0" x2="340"/>
-                        <path class="chart-area" id="chartArea"/>
-                        <path class="chart-line" id="chartLine"/>
-                    </svg>
-                </div>
-            </div>
-
-            <div class="dash-card">
-                <div class="dash-card-header"><div class="dash-card-title">Bot stats</div></div>
-                <div class="stats-grid">
-                    <div class="stat-item"><div class="stat-label">Trades</div><div class="stat-value" id="tradeCount">0</div></div>
-                    <div class="stat-item"><div class="stat-label">Net profit</div><div class="stat-value" id="totalProfit">$0.00</div></div>
-                </div>
-            </div>
+        <!-- Workflow Nodes -->
+        <div class="node-card" id="node-1" style="left: 40px; top: 200px;">
+            <div class="node-title">1. Market Scan</div>
+            <div class="node-value" id="val-1">WAITING</div>
+            <div class="node-sub">Scanning for spread...</div>
         </div>
 
-        <div id="logs-panel"></div>
+        <div class="node-card" id="node-2" style="left: 300px; top: 120px;">
+            <div class="node-title">2. Buy MEXC</div>
+            <div class="node-value" id="val-2">---</div>
+            <div class="node-sub">1,000 ZEPH</div>
+        </div>
+
+        <div class="node-card" id="node-3" style="left: 560px; top: 240px;">
+            <div class="node-title">3. Bridge</div>
+            <div class="node-value" id="val-3">---</div>
+            <div class="node-sub">Wrap to wZEPH</div>
+        </div>
+
+        <div class="node-card" id="node-4" style="left: 820px; top: 140px;">
+            <div class="node-title">4. Swap & Sell</div>
+            <div class="node-value" id="val-4">---</div>
+            <div class="node-sub">wZEPH → USDT</div>
+        </div>
+
+        <div class="node-card" id="node-5" style="left: 1060px; top: 260px;">
+            <div class="node-title">5. P&L</div>
+            <div class="node-value" id="val-5">$0.00</div>
+            <div class="node-sub">Net Realized</div>
+        </div>
     </div>
 
+    <div id="dashboard">
+        <div class="dash-card">
+            <div class="dash-header">Bot Statistics</div>
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-label">Total Trades</div>
+                    <div class="stat-val" id="statTrades">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Net Profit</div>
+                    <div class="stat-val profit" id="statProfit">$0.00</div>
+                </div>
+            </div>
+        </div>
+        <div class="dash-card">
+            <div class="dash-header">Simulation Config</div>
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-label">Gas Fee</div>
+                    <div class="stat-val">$10.00</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Threshold (2x)</div>
+                    <div class="stat-val">$20.00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="logs-panel"></div>
+
     <script>
-        (function() {
-            // ----- configuration -----
-            const CONFIG = {
-                tradeSize: 1000,            // 1,000 ZEPH
-                gasCost: 10.0,               // $20 gas/withdrawals
-                tickMs: 700,
-                mexcBase: 3.00,
-                evmPremium: 0.09,             // $3.09 when mexc=3.00
-                thresholdMultiplier: 2,        // gross profit must be >= 2*gasCost
-                chartPoints: 50,
-                chartMax: 0.20                 // max spread % on chart
+    (function() {
+        // --- Configuration & State Security ---
+        const CONFIG = Object.freeze({
+            TRADE_SIZE: 1000,       // ZEPH
+            GAS_COST: 10.0,         // $10 fixed fee per trade cycle
+            THRESHOLD_MULT: 2,      // 2 * GAS_COST = $20 min profit
+            TICK_RATE: 600,         // ms
+            VOLATILITY: 0.015       // Price volatility simulation
+        });
+
+        const state = {
+            price: 3.00,
+            balance: 10000.00,
+            tradeCount: 0,
+            totalProfit: 0,
+            isLocked: false,        // Mutex for trade execution
+            autoEnabled: true       // Master switch state
+        };
+
+        // --- DOM References ---
+        const DOM = {
+            statusPill: document.getElementById('statusPill'),
+            statusText: document.getElementById('statusText'),
+            dispPrice: document.getElementById('dispPrice'),
+            dispSpread: document.getElementById('dispSpread'),
+            dispGross: document.getElementById('dispGross'),
+            threshBadge: document.getElementById('threshBadge'),
+            autoSwitch: document.getElementById('autoSwitch'),
+            wireSvg: document.getElementById('wireSvg'),
+            logs: document.getElementById('logs-panel'),
+            statTrades: document.getElementById('statTrades'),
+            statProfit: document.getElementById('statProfit'),
+            nodes: [
+                { el: document.getElementById('node-1'), val: document.getElementById('val-1') },
+                { el: document.getElementById('node-2'), val: document.getElementById('val-2') },
+                { el: document.getElementById('node-3'), val: document.getElementById('val-3') },
+                { el: document.getElementById('node-4'), val: document.getElementById('val-4') },
+                { el: document.getElementById('node-5'), val: document.getElementById('val-5') }
+            ]
+        };
+
+        // --- Utility Functions ---
+        const log = (msg, type = 'info') => {
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">${time}</span><span class="log-msg ${type}">${msg}</span>`;
+            DOM.logs.prepend(entry);
+            // Keep log clean
+            if (DOM.logs.children.length > 20) DOM.logs.lastChild.remove();
+        };
+
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        const formatMoney = (val) => `$${val.toFixed(2)}`;
+        const formatPct = (val) => `${(val * 100).toFixed(3)}%`;
+
+        // --- Wire Drawing ---
+        const wires = [
+            { from: '#node-1', to: '#node-2' },
+            { from: '#node-2', to: '#node-3' },
+            { from: '#node-3', to: '#node-4' },
+            { from: '#node-4', to: '#node-5' }
+        ];
+
+        function drawWires() {
+            DOM.wireSvg.innerHTML = '';
+            const ns = 'http://www.w3.org/2000/svg';
+            
+            wires.forEach((w, idx) => {
+                const fromEl = document.querySelector(w.from);
+                const toEl = document.querySelector(w.to);
+                if(!fromEl || !toEl) return;
+
+                const fRect = fromEl.getBoundingClientRect();
+                const tRect = toEl.getBoundingClientRect();
+                const canvasRect = document.getElementById('workflow-canvas').getBoundingClientRect();
+
+                // Start point: right-center of from
+                const x1 = fRect.right - canvasRect.left;
+                const y1 = fRect.top + fRect.height/2 - canvasRect.top;
+                
+                // End point: left-center of to
+                const x2 = tRect.left - canvasRect.left;
+                const y2 = tRect.top + tRect.height/2 - canvasRect.top;
+
+                // Bezier control points
+                const cp = Math.abs(x2 - x1) * 0.5;
+                const d = `M ${x1} ${y1} C ${x1+cp} ${y1}, ${x2-cp} ${y2}, ${x2} ${y2}`;
+
+                // Path
+                const path = document.createElementNS(ns, 'path');
+                path.setAttribute('d', d);
+                path.setAttribute('class', 'wire-path');
+                path.id = `wire-${idx}`;
+                DOM.wireSvg.appendChild(path);
+
+                // Packet (circle)
+                const circle = document.createElementNS(ns, 'circle');
+                circle.setAttribute('r', '4');
+                circle.setAttribute('class', 'wire-packet');
+                circle.id = `pkt-${idx}`;
+                circle.style.offsetPath = `path('${d}')`;
+                DOM.wireSvg.appendChild(circle);
+            });
+        }
+
+        // --- Core Logic ---
+
+        // Calculate Market State
+        function scanMarket() {
+            // Random walk for price simulation
+            const delta = (Math.random() - 0.5) * CONFIG.VOLATILITY;
+            state.price = Math.max(2.5, Math.min(3.5, state.price + delta));
+            
+            // Simulate EVM premium (randomly fluctuates)
+            const evmPremium = 0.005 + (Math.random() * 0.04); 
+            const spread = evmPremium; // Spread in decimal (e.g., 0.03 = 3%)
+            
+            // Calculate Gross Profit
+            // Gross = Size * Spread. 
+            // Note: We treat spread as direct profit per unit.
+            const grossProfit = CONFIG.TRADE_SIZE * spread;
+            
+            return {
+                price: state.price,
+                spread: spread,
+                grossProfit: grossProfit,
+                thresholdMet: grossProfit >= (CONFIG.GAS_COST * CONFIG.THRESHOLD_MULT)
             };
+        }
 
-            // ----- state -----
-            const state = {
-                mexcPrice: 3.00,
-                evmPrice: 3.09,
-                spread: 0,
-                balance: 10000.00,
-                totalProfit: 0,
-                tradeCount: 0,
-                isTrading: false,
-                thresholdMet: false,
-                fullActivationEnabled: false,
-                spreadHistory: []
-            };
+        function updateUI(market) {
+            DOM.dispPrice.textContent = `$${market.price.toFixed(4)}`;
+            DOM.dispSpread.textContent = formatPct(market.spread);
+            DOM.dispGross.textContent = formatMoney(market.grossProfit);
+            DOM.dispGross.style.color = market.thresholdMet ? 'var(--emerald)' : 'var(--cyan)';
 
-            // ----- DOM elements -----
-            const ui = {
-                statusIndicator: document.getElementById('statusIndicator'),
-                statusText: document.getElementById('statusText'),
-                balanceValue: document.getElementById('balanceValue'),
-                priceMexc: document.getElementById('priceMexc'),
-                priceEvm: document.getElementById('priceEvm'),
-                spreadDisplay: document.getElementById('spreadDisplay'),
-                buyDisplay: document.getElementById('buyDisplay'),
-                bridgeDisplay: document.getElementById('bridgeDisplay'),
-                sellDisplay: document.getElementById('sellDisplay'),
-                profitDisplay: document.getElementById('profitDisplay'),
-                tradeCount: document.getElementById('tradeCount'),
-                totalProfit: document.getElementById('totalProfit'),
-                chartLine: document.getElementById('chartLine'),
-                chartArea: document.getElementById('chartArea'),
-                thresholdLine: document.getElementById('thresholdLine'),
-                logsPanel: document.getElementById('logs-panel'),
-                wireSvg: document.getElementById('wireSvg'),
-                mexcAsk: document.getElementById('mexcAsk'),
-                grossProfit: document.getElementById('grossProfit'),
-                twiceFee: document.getElementById('twiceFee'),
-                thresholdBadge: document.getElementById('thresholdBadge'),
-                toggleBtn: document.getElementById('toggleBtn'),
-                nodes: {
-                    scan: document.getElementById('node-scan'),
-                    buy: document.getElementById('node-buy'),
-                    bridge: document.getElementById('node-bridge'),
-                    sell: document.getElementById('node-sell'),
-                    profit: document.getElementById('node-profit')
-                }
-            };
-
-            // connections for wires
-            const connections = [
-                { from: 'node-scan', to: 'node-buy' },
-                { from: 'node-buy', to: 'node-bridge' },
-                { from: 'node-bridge', to: 'node-sell' },
-                { from: 'node-sell', to: 'node-profit' }
-            ];
-
-            // initialize spread history
-            state.spreadHistory = new Array(CONFIG.chartPoints).fill(0);
-
-            // ----- helpers -----
-            function log(message, type = 'info') {
-                const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-                const row = document.createElement('div');
-                row.className = 'log-row';
-                row.innerHTML = `<span class="log-time">${time}</span><span class="log-type ${type}"></span><span class="log-msg ${type}">${message}</span>`;
-                ui.logsPanel.appendChild(row);
-                while (ui.logsPanel.children.length > 30) ui.logsPanel.removeChild(ui.logsPanel.firstChild);
-                ui.logsPanel.scrollTop = ui.logsPanel.scrollHeight;
+            // Threshold Badge
+            if (market.thresholdMet) {
+                DOM.threshBadge.textContent = 'THRESHOLD MET';
+                DOM.threshBadge.classList.add('active');
+            } else {
+                DOM.threshBadge.textContent = `Requires ≥ $${(CONFIG.GAS_COST * CONFIG.THRESHOLD_MULT).toFixed(2)}`;
+                DOM.threshBadge.classList.remove('active');
             }
 
-            // draw wires
-            function drawWires() {
-                const canvas = document.getElementById('workflow-canvas');
-                const canvasRect = canvas.getBoundingClientRect();
-                let paths = '';
-
-                connections.forEach(conn => {
-                    const fromEl = document.getElementById(conn.from);
-                    const toEl = document.getElementById(conn.to);
-                    if (!fromEl || !toEl) return;
-                    const fromRect = fromEl.getBoundingClientRect();
-                    const toRect = toEl.getBoundingClientRect();
-                    const x1 = fromRect.right - canvasRect.left;
-                    const y1 = fromRect.top + fromRect.height/2 - canvasRect.top;
-                    const x2 = toRect.left - canvasRect.left;
-                    const y2 = toRect.top + toRect.height/2 - canvasRect.top;
-                    const ctrlOffset = Math.min(100, Math.abs(x2 - x1) * 0.4);
-                    const pathD = `M ${x1} ${y1} C ${x1 + ctrlOffset} ${y1}, ${x2 - ctrlOffset} ${y2}, ${x2} ${y2}`;
-                    toEl.dataset.wirePath = pathD;
-                    toEl.dataset.wireFrom = conn.from;
-                    paths += `<path class="wire-path" id="wire-${conn.from}-${conn.to}" d="${pathD}" />`;
-                });
-                ui.wireSvg.innerHTML = paths;
+            // Node 1 state
+            if (market.thresholdMet) {
+                DOM.nodes[0].el.classList.add('success');
+                DOM.nodes[0].val.textContent = 'READY';
+            } else {
+                DOM.nodes[0].el.classList.remove('success');
+                DOM.nodes[0].val.textContent = 'SCANNING';
             }
+        }
 
-            // packet animation
-            function animatePacket(toNodeId, callback) {
-                const toNode = document.getElementById(toNodeId);
-                if (!toNode || !toNode.dataset.wirePath) { if(callback) callback(); return; }
-                const wire = document.getElementById(`wire-${toNode.dataset.wireFrom}-${toNodeId}`);
-                const pathD = toNode.dataset.wirePath;
-                const packet = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                packet.setAttribute('r', '5');
-                packet.setAttribute('class', 'wire-packet');
-                packet.style.offsetPath = `path('${pathD}')`;
-                packet.style.offsetDistance = '0%';
-                ui.wireSvg.appendChild(packet);
-                if (wire) wire.classList.add('active');
+        function setStatus(isRunning) {
+            DOM.statusPill.className = `status-pill ${isRunning ? 'running' : 'idle'}`;
+            DOM.statusText.textContent = isRunning ? 'EXECUTING' : 'MONITORING';
+        }
 
-                let start = null;
-                const dur = 500;
-                function anim(ts) {
-                    if (!start) start = ts;
-                    const prog = Math.min((ts - start) / dur, 1);
-                    packet.style.offsetDistance = `${prog * 100}%`;
-                    if (prog < 1) requestAnimationFrame(anim);
-                    else {
-                        packet.remove();
-                        if (wire) wire.classList.remove('active');
-                        if (callback) callback();
+        // Animation helper
+        async function animateWire(wireIndex) {
+            const wire = document.getElementById(`wire-${wireIndex}`);
+            const pkt = document.getElementById(`pkt-${wireIndex}`);
+            
+            if(!wire || !pkt) return;
+
+            wire.classList.add('active');
+            pkt.classList.add('active');
+            
+            // Animate packet
+            let progress = 0;
+            const duration = 400; // ms
+            const start = performance.now();
+
+            return new Promise(resolve => {
+                function step(timestamp) {
+                    progress = (timestamp - start) / duration;
+                    if (progress > 1) progress = 1;
+                    
+                    pkt.style.offsetDistance = `${progress * 100}%`;
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        // Reset for next time, keep wire lit
+                        pkt.classList.remove('active');
+                        resolve();
                     }
                 }
-                requestAnimationFrame(anim);
+                requestAnimationFrame(step);
+            });
+        }
+
+        function setNodeState(index, stateName) {
+            const node = DOM.nodes[index];
+            node.el.classList.remove('active', 'success');
+            if (stateName) node.el.classList.add(stateName);
+        }
+
+        // --- Execution Flow ---
+        async function executeTrade(market) {
+            if (state.isLocked) return;
+            state.isLocked = true;
+            setStatus(true);
+
+            // Reset visual state
+            DOM.wireSvg.querySelectorAll('.wire-path').forEach(w => w.classList.remove('active'));
+
+            try {
+                log(`Threshold met. Starting trade for profit ${formatMoney(market.grossProfit)}`, 'warn');
+
+                // Step 1: Already green (Scan success)
+                await sleep(300);
+
+                // Step 2: Buy
+                setNodeState(0, 'success'); // Ensure start node stays green
+                setNodeState(1, 'active');
+                DOM.nodes[1].val.textContent = 'BUYING...';
+                await animateWire(0);
+                
+                DOM.nodes[1].val.textContent = 'BOUGHT';
+                setNodeState(1, 'success');
+                log(`Bought 1,000 ZEPH on MEXC @ ${market.price.toFixed(4)}`, 'success');
+                await sleep(200);
+
+                // Step 3: Bridge
+                setNodeState(2, 'active');
+                DOM.nodes[2].val.textContent = 'BRIDGING...';
+                await animateWire(1);
+
+                DOM.nodes[2].val.textContent = 'WRAPPED';
+                setNodeState(2, 'success');
+                log(`Bridged to wZEPH.`, 'info');
+                await sleep(200);
+
+                // Step 4: Sell
+                setNodeState(3, 'active');
+                DOM.nodes[3].val.textContent = 'SELLING...';
+                await animateWire(2);
+
+                const sellPrice = market.price * (1 + market.spread);
+                DOM.nodes[3].val.textContent = sellPrice.toFixed(4);
+                setNodeState(3, 'success');
+                log(`Sold on EVM @ ${sellPrice.toFixed(4)}`, 'success');
+                await sleep(200);
+
+                // Step 5: P&L
+                setNodeState(4, 'active');
+                await animateWire(3);
+
+                // Calculate Net Profit
+                const netProfit = market.grossProfit - CONFIG.GAS_COST;
+                state.totalProfit += netProfit;
+                state.balance += netProfit;
+                state.tradeCount++;
+
+                DOM.nodes[4].val.textContent = `+${formatMoney(netProfit)}`;
+                DOM.nodes[4].val.style.color = netProfit >= 0 ? 'var(--emerald)' : 'var(--rose)';
+                setNodeState(4, 'success');
+                
+                // Update stats
+                DOM.statTrades.textContent = state.tradeCount;
+                DOM.statProfit.textContent = formatMoney(state.totalProfit);
+
+                log(`Trade complete. Net Profit: ${formatMoney(netProfit)}`, 'success');
+
+                // Reset after a pause
+                await sleep(2000);
+                
+                // Reset node values for next cycle
+                DOM.nodes[1].val.textContent = '---';
+                DOM.nodes[2].val.textContent = '---';
+                DOM.nodes[3].val.textContent = '---';
+                DOM.nodes[4].val.textContent = '$0.00';
+                DOM.nodes[4].val.style.color = '';
+                
+                for(let i=1; i<=4; i++) setNodeState(i, null);
+
+            } catch (e) {
+                console.error(e);
+                log("Error during execution", "warn");
+            } finally {
+                state.isLocked = false;
+                setStatus(false);
             }
+        }
 
-            function setNodeState(nodeKey, stateClass) {
-                const node = ui.nodes[nodeKey];
-                if (!node) return;
-                node.classList.remove('active', 'processing', 'success');
-                if (stateClass) node.classList.add(stateClass);
+        // --- Main Loop ---
+        function tick() {
+            if (state.isLocked) return;
+
+            const market = scanMarket();
+            updateUI(market);
+
+            // Automated trigger
+            if (market.thresholdMet && state.autoEnabled) {
+                executeTrade(market);
             }
+        }
 
-            function resetNodes() {
-                Object.values(ui.nodes).forEach(n => n.classList.remove('active', 'processing', 'success'));
-            }
+        // --- Init ---
+        window.addEventListener('load', () => {
+            drawWires();
+            window.addEventListener('resize', drawWires);
 
-            // update market based on mexc slider (simulate)
-            function updateMarket() {
-                if (state.isTrading) return;
-
-                // random walk on mexc price (±0.02)
-                const delta = (Math.random() - 0.5) * 0.04;
-                state.mexcPrice = Math.max(2.90, Math.min(3.20, state.mexcPrice + delta));
-                // evm implied = mexc + premium with small noise
-                const noise = (Math.random() - 0.5) * 0.02;
-                state.evmPrice = state.mexcPrice + 0.09 + noise;
-                // spread % = (evm - mexc) / mexc * 100
-                state.spread = ((state.evmPrice - state.mexcPrice) / state.mexcPrice) * 100;
-
-                // gross profit for 1000 ZEPH
-                const gross = CONFIG.tradeSize * (state.spread / 100);
-                state.thresholdMet = gross >= CONFIG.thresholdMultiplier * CONFIG.gasCost;
-
-                // update UI
-                ui.priceMexc.textContent = '$' + state.mexcPrice.toFixed(5);
-                ui.priceEvm.textContent = '$' + state.evmPrice.toFixed(5);
-                const spreadText = (state.spread >= 0 ? '+' : '') + state.spread.toFixed(3) + '%';
-                ui.spreadDisplay.textContent = spreadText;
-                ui.spreadDisplay.style.color = state.spread >= 0.05 ? 'var(--emerald)' : 'var(--text-bright)';
-                ui.mexcAsk.textContent = '$' + state.mexcPrice.toFixed(2);
-                const grossProfitVal = gross;
-                ui.grossProfit.textContent = '$' + grossProfitVal.toFixed(2);
-                ui.twiceFee.textContent = '$' + (CONFIG.thresholdMultiplier * CONFIG.gasCost).toFixed(2);
-
-                if (state.thresholdMet) {
-                    ui.thresholdBadge.textContent = '✅ threshold met (gross ≥ 2×fee)';
-                    ui.thresholdBadge.classList.add('met');
-                } else {
-                    ui.thresholdBadge.textContent = '⚡ threshold not met';
-                    ui.thresholdBadge.classList.remove('met');
-                }
-
-                // update node-scan based on threshold (first step turns green)
-                if (state.thresholdMet && !state.isTrading && !state.fullActivationEnabled) {
-                    setNodeState('scan', 'success');
-                    ui.toggleBtn.classList.remove('disabled');
-                } else if (!state.thresholdMet && !state.isTrading) {
-                    setNodeState('scan', null);
-                    ui.toggleBtn.classList.add('disabled');
-                }
-            }
-
-            // chart update
-            function updateChart() {
-                state.spreadHistory.push(state.spread);
-                if (state.spreadHistory.length > CONFIG.chartPoints) state.spreadHistory.shift();
-
-                const w = 340, h = 140, pad = 5, maxVal = CONFIG.chartMax;
-                const points = state.spreadHistory.map((val, i) => {
-                    const x = (i / (CONFIG.chartPoints-1)) * w;
-                    const y = h - pad - (Math.min(val, maxVal) / maxVal) * (h - pad*2);
-                    return { x, y };
-                });
-                const lineD = points.map((p, i) => `${i===0?'M':'L'} ${p.x} ${p.y}`).join(' ');
-                ui.chartLine.setAttribute('d', lineD);
-                const areaD = lineD + ` L ${w} ${h} L 0 ${h} Z`;
-                ui.chartArea.setAttribute('d', areaD);
-                const threshY = h - pad - (0.05 / maxVal) * (h - pad*2);
-                ui.thresholdLine.setAttribute('y1', threshY);
-                ui.thresholdLine.setAttribute('y2', threshY);
-            }
-
-            // full trade execution (only when toggle activated)
-            function executeFullTrade() {
-                if (state.isTrading || !state.thresholdMet || !state.fullActivationEnabled) return;
-                state.isTrading = true;
-                state.fullActivationEnabled = false;
-                ui.toggleBtn.classList.remove('active');
-                ui.toggleBtn.classList.add('disabled');
-                ui.statusIndicator.classList.add('executing');
-                ui.statusText.textContent = 'EXECUTING';
-
-                const gross = CONFIG.tradeSize * (state.spread / 100);
-                log(`🔥 Full process activated · gross profit $${gross.toFixed(2)}`, 'warn');
-                resetNodes();
-
-                // step 1 (already green, set to processing then success)
-                setNodeState('scan', 'processing');
-                setTimeout(() => {
-                    setNodeState('scan', 'success');
-                    // step 2 buy
-                    setNodeState('buy', 'processing');
-                    ui.buyDisplay.textContent = '1,000 ZEPH';
-                    animatePacket('node-buy', () => {
-                        setNodeState('buy', 'success');
-                        log(`Buy 1000 ZEPH @ $${state.mexcPrice.toFixed(2)} on MEXC`, 'info');
-                        setTimeout(() => {
-                            // step 3 bridge
-                            setNodeState('bridge', 'processing');
-                            ui.bridgeDisplay.textContent = '1,000 wZEPH';
-                            animatePacket('node-bridge', () => {
-                                setNodeState('bridge', 'success');
-                                setTimeout(() => {
-                                    // step 4 sell
-                                    setNodeState('sell', 'processing');
-                                    const sellAmount = CONFIG.tradeSize * (1 + state.spread/100);
-                                    ui.sellDisplay.textContent = sellAmount.toFixed(2) + ' USDT';
-                                    animatePacket('node-sell', () => {
-                                        setNodeState('sell', 'success');
-                                        setTimeout(() => {
-                                            // step 5 profit
-                                            setNodeState('profit', 'processing');
-                                            const net = gross - CONFIG.gasCost;
-                                            state.balance += net;
-                                            state.totalProfit += net;
-                                            state.tradeCount++;
-                                            ui.profitDisplay.textContent = '+$' + net.toFixed(2);
-                                            ui.balanceValue.textContent = '$' + state.balance.toFixed(2);
-                                            ui.tradeCount.textContent = state.tradeCount;
-                                            ui.totalProfit.textContent = '$' + state.totalProfit.toFixed(2);
-
-                                            animatePacket('node-profit', () => {
-                                                setNodeState('profit', 'success');
-                                                log(`✅ Profit realized: $${net.toFixed(2)} (after $${CONFIG.gasCost} gas)`, 'success');
-                                                setTimeout(() => {
-                                                    resetNodes();
-                                                    state.isTrading = false;
-                                                    ui.statusIndicator.classList.remove('executing');
-                                                    ui.statusText.textContent = 'SCANNING';
-                                                    // re-check threshold for toggle
-                                                    if (state.thresholdMet) {
-                                                        setNodeState('scan', 'success');
-                                                        ui.toggleBtn.classList.remove('disabled');
-                                                    }
-                                                }, 800);
-                                            });
-                                        }, 300);
-                                    });
-                                }, 300);
-                            });
-                        }, 400);
-                    });
-                }, 300);
-            }
-
-            // toggle click handler
-            ui.toggleBtn.addEventListener('click', () => {
-                if (state.isTrading || !state.thresholdMet) return;
-                state.fullActivationEnabled = !state.fullActivationEnabled;
-                if (state.fullActivationEnabled) {
-                    ui.toggleBtn.classList.add('active');
-                    ui.toggleBtn.textContent = '⏸ abort? (click again)';
-                } else {
-                    ui.toggleBtn.classList.remove('active');
-                    ui.toggleBtn.textContent = '▶ activate full process';
-                }
-                // if active and user clicks again, we start execution
-                if (state.fullActivationEnabled) {
-                    executeFullTrade();
-                }
+            // Toggle Switch Logic
+            DOM.autoSwitch.addEventListener('click', () => {
+                state.autoEnabled = !state.autoEnabled;
+                DOM.autoSwitch.classList.toggle('active', state.autoEnabled);
+                log(`Auto-trade ${state.autoEnabled ? 'ENABLED' : 'DISABLED'}`, state.autoEnabled ? 'success' : 'warn');
             });
 
-            // main tick
-            function tick() {
-                if (!state.isTrading) {
-                    updateMarket();
-                    updateChart();
-                }
-            }
+            log("System Initialized. Gas Fee: $10. Threshold: $20.");
+            
+            // Start loop
+            setInterval(tick, CONFIG.TICK_RATE);
+        });
 
-            // init
-            window.addEventListener('load', () => {
-                drawWires();
-                window.addEventListener('resize', () => setTimeout(drawWires, 100));
-                log('Arbitrage bot · MEXC conditional', 'info');
-                log('Threshold: gross profit ≥ fee+$10 = $30', 'info');
-                setInterval(tick, CONFIG.tickMs);
-            });
-        })();
+    })();
     </script>
 </body>
-</html>
